@@ -5,6 +5,7 @@ from pathlib import Path
 
 def generate_manifest(documents):
 
+    documents = mark_duplicates(documents)
     batch_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 
     manifest = {
@@ -21,3 +22,17 @@ def generate_manifest(documents):
         json.dump(manifest, f, indent=2, default=str)
 
     return file_path
+
+def mark_duplicates(documents):
+
+    seen = set()
+
+    for doc in documents:
+
+        if doc["sha256"] in seen:
+            doc["duplicate"] = True
+        else:
+            doc["duplicate"] = False
+            seen.add(doc["sha256"])
+
+    return documents
