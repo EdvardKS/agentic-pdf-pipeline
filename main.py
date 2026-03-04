@@ -30,9 +30,13 @@ def main():
         for doc in documents:
             if doc.get("duplicate"):
                 continue
-            text = extract_raw_text(doc["path"])
+            result = extract_raw_text(doc["path"])
             print(f"\nProcesado: {doc['path']}")
-            print(f"Caracteres extraídos: {len(text)}")
+            print(f"Caracteres extraídos: {result['text_length']}")
+            if result["ocr_needed"]:
+                print("⚠ OCR requerido")
+                
+                
 
     elif choice == "2": print("\nCancelado\n")
     else: print("\nOpción no válida\n")
