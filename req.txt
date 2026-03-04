@@ -1,1 +1,5 @@
 pymupdf
+pytesseract
+pillow
+python-dotenv
+ollama 
