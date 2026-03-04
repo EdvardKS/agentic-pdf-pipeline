@@ -3,6 +3,7 @@ from manifest import generate_manifest, summarize_batch, mark_duplicates
 from pipeline.preprocess import extract_raw_text, save_text_artifact
 from pipeline.ocr import ocr_pdf
 from pipeline.text_cleaner import clean_text
+from pipeline.chunker import semantic_chunk, save_chunks
 
 def user_menu():
     print("Opciones:")
@@ -64,7 +65,19 @@ def main():
             clean = clean_text(doc["text"])
             doc["clean_text"] = clean
             print(f"Caracteres limpios: {len(clean)}")
-            
+        # ---- chunking ----
+            chunks = semantic_chunk(doc["clean_text"])
+            doc["chunks"] = chunks
+            artifact = save_chunks(doc["path"], chunks)
+            print(f"Chunks generados: {len(chunks)}")
+            print(f"Artefacto chunks: {artifact}")
+        
+        
+        
+        
+        
+        
+        
     elif choice == "2":
         print("\nCancelado\n")
 
