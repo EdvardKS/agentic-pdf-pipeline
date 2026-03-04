@@ -77,7 +77,6 @@ def main():
             chunks = semantic_chunk(doc["clean_text"])
             doc["chunks"] = chunks
             artifact = save_chunks(doc["path"], chunks)
-            print(f"Chunks generados: {len(chunks)}")
         # --- save vectors artifact ----
             vectors = embed_chunks(doc)
             add_vectors(vectors)
