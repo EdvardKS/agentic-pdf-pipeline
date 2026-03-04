@@ -4,6 +4,8 @@ from pipeline.preprocess import extract_raw_text, save_text_artifact
 from pipeline.ocr import ocr_pdf
 from pipeline.text_cleaner import clean_text
 from pipeline.chunker import semantic_chunk, save_chunks
+from pipeline.embeddings import embed_chunks
+from pipeline.vector_store import add_vectors
 
 def user_menu():
     print("Opciones:")
@@ -71,7 +73,15 @@ def main():
             artifact = save_chunks(doc["path"], chunks)
             print(f"Chunks generados: {len(chunks)}")
             print(f"Artefacto chunks: {artifact}")
-        
+        # --- embeddings ----
+            chunks = semantic_chunk(doc["clean_text"])
+            doc["chunks"] = chunks
+            artifact = save_chunks(doc["path"], chunks)
+            print(f"Chunks generados: {len(chunks)}")
+        # --- save vectors artifact ----
+            vectors = embed_chunks(doc)
+            add_vectors(vectors)
+            print(f"Embeddings generados: {len(vectors)}")
         
         
         
