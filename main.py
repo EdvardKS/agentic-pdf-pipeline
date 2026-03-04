@@ -1,6 +1,6 @@
 from searchDocs import find_pdfs
 from manifest import generate_manifest, summarize_batch, mark_duplicates
-
+from pipeline.preprocess import extract_raw_text
 
 def user_menu():
 
@@ -14,34 +14,28 @@ def user_menu():
 
 
 def main():
-
     ruta_docs = "./docs"
-
     documents = find_pdfs(ruta_docs)
-
     if not documents:
         print("No se encontraron PDFs")
         return
-
     documents = mark_duplicates(documents)
-
     summary = summarize_batch(documents)
-
     manifest_path = generate_manifest(documents)
-
     choice = user_menu()
 
     if choice == "1":
 
         print("\nComienza el pipeline\n")
+        for doc in documents:
+            if doc.get("duplicate"):
+                continue
+            text = extract_raw_text(doc["path"])
+            print(f"\nProcesado: {doc['path']}")
+            print(f"Caracteres extraídos: {len(text)}")
 
-    elif choice == "2":
-
-        print("\nCancelado\n")
-
-    else:
-
-        print("\nOpción no válida\n")
+    elif choice == "2": print("\nCancelado\n")
+    else: print("\nOpción no válida\n")
 
 
 if __name__ == "__main__":
