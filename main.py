@@ -1,36 +1,47 @@
-from searchDocs import find_pdfs, print_pdf_list
-from manifest import generate_manifest
+from searchDocs import find_pdfs
+from manifest import generate_manifest, summarize_batch, mark_duplicates
+
+
+def user_menu():
+
+    print("Opciones:")
+    print("1 - Extraer")
+    print("2 - Cancelar")
+
+    choice = input("\nSelecciona opción: ")
+
+    return choice.strip()
 
 
 def main():
 
     ruta_docs = "./docs"
 
-    pdfs = find_pdfs(ruta_docs)
+    documents = find_pdfs(ruta_docs)
 
-    if not pdfs:
+    if not documents:
         print("No se encontraron PDFs")
         return
 
-    print_pdf_list(pdfs)
+    documents = mark_duplicates(documents)
 
-    print("Opciones:")
-    print("1 - Extraer")
-    print("2 - Cancelar")
+    summary = summarize_batch(documents)
 
-    opcion = input("\nSelecciona opción: ")
+    manifest_path = generate_manifest(documents)
 
-    if opcion == "1":
+    choice = user_menu()
 
-        manifest_path = generate_manifest(pdfs)
-
-        print("\nBatch creado:")
-        print(manifest_path)
+    if choice == "1":
 
         print("\nComienza el pipeline\n")
 
-    elif opcion == "2":
+    elif choice == "2":
+
         print("\nCancelado\n")
+
+    else:
+
+        print("\nOpción no válida\n")
 
 
 if __name__ == "__main__":
