@@ -1,4 +1,5 @@
 from searchDocs import find_pdfs, print_pdf_list
+from manifest import generate_manifest
 
 
 def main():
@@ -20,6 +21,12 @@ def main():
     opcion = input("\nSelecciona opción: ")
 
     if opcion == "1":
+
+        manifest_path = generate_manifest(pdfs)
+
+        print("\nBatch creado:")
+        print(manifest_path)
+
         print("\nComienza el pipeline\n")
 
     elif opcion == "2":
