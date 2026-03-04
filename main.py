@@ -2,7 +2,7 @@ from searchDocs import find_pdfs
 from manifest import generate_manifest, summarize_batch, mark_duplicates
 from pipeline.preprocess import extract_raw_text, save_text_artifact
 from pipeline.ocr import ocr_pdf
-
+from pipeline.text_cleaner import clean_text
 
 def user_menu():
     print("Opciones:")
@@ -32,7 +32,7 @@ def main():
         print("\nComienza el pipeline\n")
 
         for doc in documents:
-
+            
             if doc.get("duplicate"):
                 continue
 
@@ -60,6 +60,11 @@ def main():
 
                 print(f"Artefacto RAW: {artifact}")
 
+        # ---- limpiar texto ----
+            clean = clean_text(doc["text"])
+            doc["clean_text"] = clean
+            print(f"Caracteres limpios: {len(clean)}")
+            
     elif choice == "2":
         print("\nCancelado\n")
 
