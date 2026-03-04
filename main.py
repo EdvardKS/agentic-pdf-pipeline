@@ -6,6 +6,7 @@ from pipeline.text_cleaner import clean_text
 from pipeline.chunker import semantic_chunk, save_chunks
 from pipeline.embeddings import embed_chunks
 from pipeline.vector_store import add_vectors
+from chat import start_chat
 
 def user_menu():
     print("Opciones:")
@@ -81,8 +82,11 @@ def main():
             vectors = embed_chunks(doc)
             add_vectors(vectors)
             print(f"Embeddings generados: {len(vectors)}")
-        
-        
+            
+    # --- iniciar chat --- out of loop
+        print("\nIndexación completada\n")
+        start_chat()
+            
         
         
         

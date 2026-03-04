@@ -1,14 +1,28 @@
 from pipeline.ollama_client import client
 
 
+import time
+
 def embed_text(text: str):
 
-    response = client.embeddings(
-        model="bge-m3",
-        prompt=text
-    )
+    for attempt in range(3):
 
-    return response["embedding"]
+        try:
+
+            response = client.embeddings(
+                model="bge-m3",
+                prompt=text
+            )
+
+            return response["embedding"]
+
+        except Exception as e:
+
+            print("⚠ Error embedding, retry...", e)
+
+            time.sleep(2)
+
+    raise RuntimeError("Embedding failed after retries")
 
 
 def embed_chunks(doc):
@@ -25,5 +39,7 @@ def embed_chunks(doc):
             "text": chunk,
             "embedding": emb
         })
+
+        time.sleep(0.1)  
 
     return vectors
