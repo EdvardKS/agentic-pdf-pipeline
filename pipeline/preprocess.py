@@ -9,7 +9,7 @@ def extract_raw_text(pdf_path):
     text = ""
     with fitz.open(pdf_path) as doc:
         for page in doc:
-            text += page.get_text()
+            text += page.get_text() # type: ignore
 
     text_length = len(text)
 

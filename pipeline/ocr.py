@@ -1,7 +1,7 @@
 import fitz
 import os
 from pathlib import Path
-from pipeline.ollama_client import client
+from pipeline.ollama_client import client,VISION_MODEL
 
 TMP_DIR = Path("./tmp")
 TMP_DIR.mkdir(exist_ok=True)
@@ -22,13 +22,13 @@ def ocr_pdf(pdf_path):
 
     for img in images:
         response = client.chat(
-            model="minicpm-v:8b",
+            model= VISION_MODEL, # type: ignore
             messages=[{
                 "role": "user",
                 "content": "Extract all text from this document image exactly as written.",
                 "images": [img]
             }]
-        )
+        ) # type: ignore
         text += response["message"]["content"]
         os.remove(img)
 

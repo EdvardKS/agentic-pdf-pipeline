@@ -1,5 +1,5 @@
 from pipeline.semantic_search import search
-from pipeline.ollama_client import client
+from pipeline.ollama_client import client, CHAT_MODEL
 
 
 def ask(query):
@@ -19,7 +19,7 @@ PREGUNTA:
 """
 
     response = client.chat(
-        model="llama3.1:8b",
+        model=CHAT_MODEL, # type: ignore
         messages=[{
             "role": "user",
             "content": prompt

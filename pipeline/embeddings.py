@@ -1,5 +1,5 @@
 from pipeline.ollama_client import client
-
+from pipeline.ollama_client import EMBED_MODEL
 
 import time
 
@@ -10,7 +10,7 @@ def embed_text(text: str):
         try:
 
             response = client.embeddings(
-                model="bge-m3",
+                model=EMBED_MODEL, # type: ignore
                 prompt=text
             )
 

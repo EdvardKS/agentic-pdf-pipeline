@@ -3,3 +3,5 @@ pytesseract
 pillow
 python-dotenv
 ollama 
+langchain 
+langgraph
