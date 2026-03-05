@@ -1,4 +1,4 @@
-from pipeline.rag_chat import ask
+from pipeline.chat.space_rag_chat import ask
 
 
 def start_chat():
