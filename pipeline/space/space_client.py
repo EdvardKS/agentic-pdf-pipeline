@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -33,6 +35,23 @@ class SpaceClient:
     def __init__(self, cfg: SpaceConfig):
         self.cfg = cfg
         self.session = requests.Session()
+        pool_size = int(os.getenv("SPACE_HTTP_POOL_MAXSIZE", "64"))
+        retries = Retry(
+            total=0,
+            connect=0,
+            read=0,
+            redirect=0,
+            status=0,
+            allowed_methods=frozenset(["GET", "POST"]),
+        )
+        adapter = HTTPAdapter(
+            pool_connections=pool_size,
+            pool_maxsize=pool_size,
+            max_retries=retries,
+        )
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+        self._batch_embed_mode: Optional[str] = None
 
     # ---------- internals ----------
 
@@ -113,6 +132,67 @@ class SpaceClient:
             "No se pudo obtener embedding desde /embed con formatos compatibles. "
             f"Ultimo error: {last_error}"
         )
+
+    def embed_many(self, texts: List[str]) -> List[List[float]]:
+        """
+        Intenta embedding batch si el Space lo soporta; si no, cae a unitario.
+        """
+        if not texts:
+            return []
+
+        if self._batch_embed_mode != "unsupported":
+            try:
+                if self._batch_embed_mode is None:
+                    vectors = self._try_batch_embed(texts)
+                    self._batch_embed_mode = "supported"
+                    return vectors
+                if self._batch_embed_mode == "supported":
+                    return self._try_batch_embed(texts)
+            except Exception:
+                self._batch_embed_mode = "unsupported"
+
+        return [self.embed(t)["embedding"] for t in texts]
+
+    def _try_batch_embed(self, texts: List[str]) -> List[List[float]]:
+        attempts = [
+            {"path": "/embed", "kwargs": {"json": {"texts": texts}}},
+            {"path": "/embed", "kwargs": {"json": {"inputs": texts}}},
+            {"path": "/embed", "kwargs": {"json": {"text": texts}}},
+            {"path": "/embeddings", "kwargs": {"json": {"texts": texts}}},
+            {"path": "/embeddings", "kwargs": {"json": {"inputs": texts}}},
+        ]
+        last_error: Optional[str] = None
+
+        for attempt in attempts:
+            try:
+                resp = self._request("POST", attempt["path"], **attempt["kwargs"])
+                return self._normalize_batch_response(resp.json(), len(texts))
+            except Exception as e:
+                last_error = str(e)
+                continue
+
+        raise RuntimeError(f"Batch embedding no soportado. Ultimo error: {last_error}")
+
+    def _normalize_batch_response(self, data: Any, expected: int) -> List[List[float]]:
+        if isinstance(data, list):
+            if len(data) == expected and all(isinstance(v, list) for v in data):
+                return data
+            if len(data) == expected and all(isinstance(v, dict) for v in data):
+                vectors = [v.get("embedding") or v.get("vector") for v in data]
+                if all(isinstance(v, list) for v in vectors):
+                    return vectors  # type: ignore[return-value]
+
+        if isinstance(data, dict):
+            vectors = data.get("embeddings") or data.get("vectors") or data.get("data")
+            if isinstance(vectors, list):
+                if len(vectors) == expected and all(isinstance(v, list) for v in vectors):
+                    return vectors
+                if len(vectors) == expected and all(isinstance(v, dict) for v in vectors):
+                    out = [v.get("embedding") or v.get("vector") for v in vectors]
+                    if all(isinstance(v, list) for v in out):
+                        return out  # type: ignore[return-value]
+
+        raise RuntimeError(f"Respuesta batch no reconocida: {type(data)}")
 
     def ocr_image(self, image_path: str) -> Dict[str, Any]:
         """
