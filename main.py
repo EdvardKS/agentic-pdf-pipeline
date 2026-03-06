@@ -3,8 +3,12 @@ from manifest import generate_manifest, summarize_batch, mark_duplicates
 
 from pipeline.graph.graph import build_graph
 from pipeline.graph.state import DocumentState
-from pipeline.vector_store import add_vectors
-from chat import start_chat
+# from pipeline.vector_store import add_vectors
+# from chat import start_chat
+
+import json
+from datetime import datetime
+from pathlib import Path
 
 
 def user_menu():
@@ -13,6 +17,20 @@ def user_menu():
     print("2 - Cancelar")
     return input("\nSelecciona opción: ").strip()
 
+def create_output_file():
+
+    output_dir = Path("./outputs")
+    output_dir.mkdir(exist_ok=True)
+
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    path = output_dir / f"extraction_{ts}.json"
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump([], f)
+
+    return path
+ 
 
 def main():
 
@@ -37,6 +55,7 @@ def main():
     if choice == "1":
 
         print("\nComienza el pipeline\n")
+        output_file = create_output_file() 
 
         # Construimos el grafo UNA vez (muy importante: no dentro del loop)
         graph = build_graph()
@@ -56,23 +75,25 @@ def main():
                 "clean_text": "",
                 "chunks": [],
                 "embeddings": [],
-                "ocr_used": False
+                "ocr_used": False,
+                "output_file": str(output_file),
+                "extraction_log": []
             } 
 
             # Ejecutamos el grafo: extract -> clean -> chunk -> embed
             result = graph.invoke(state)
 
-            # Recuperamos embeddings generados
-            vectors = result["embeddings"]
+            # # Recuperamos embeddings generados
+            # vectors = result["embeddings"]
 
-            # Los añadimos a tu vector_store en memoria
-            add_vectors(vectors)
+            # # Los añadimos a tu vector_store en memoria
+            # add_vectors(vectors)
 
-            print(f"Embeddings generados: {len(vectors)}")
+            # print(f"Embeddings generados: {len(vectors)}")
+             
 
         # Al terminar, el índice está listo y arrancamos el chat RAG
-        print("\nIndexación completada\n")
-        start_chat()
+        print("\nExtracción completada\n")
 
     elif choice == "2":
         print("\nCancelado\n")

@@ -1,29 +1,29 @@
-from pipeline.semantic_search import search
-from pipeline.ollama_client import client, CHAT_MODEL
+# from pipeline.semantic_search import search
+# from pipeline.ollama_client import client, CHAT_MODEL
 
 
-def ask(query):
+# def ask(query):
 
-    results = search(query, top_k=5)
+#     results = search(query, top_k=5)
 
-    context = "\n\n".join([r["text"] for r in results])
+#     context = "\n\n".join([r["text"] for r in results])
 
-    prompt = f"""
-Responde usando SOLO la información del contexto.
+#     prompt = f"""
+# Responde usando SOLO la información del contexto.
 
-CONTEXTO:
-{context}
+# CONTEXTO:
+# {context}
 
-PREGUNTA:
-{query}
-"""
+# PREGUNTA:
+# {query}
+# """
 
-    response = client.chat(
-        model=CHAT_MODEL, # type: ignore
-        messages=[{
-            "role": "user",
-            "content": prompt
-        }]
-    )
+#     response = client.chat(
+#         model=CHAT_MODEL, # type: ignore
+#         messages=[{
+#             "role": "user",
+#             "content": prompt
+#         }]
+#     )
 
-    return response["message"]["content"]
+#     return response["message"]["content"]

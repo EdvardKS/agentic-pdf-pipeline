@@ -7,7 +7,7 @@ load_dotenv()
 HOST = os.getenv("PICASSO")
 
 CHAT_MODEL = os.getenv("CHAT_MODEL")
-EMBED_MODEL = os.getenv("EMBED_MODEL")
+# EMBED_MODEL = os.getenv("EMBED_MODEL")
 VISION_MODEL = os.getenv("VISION_MODEL")
 
 if not HOST:
@@ -19,10 +19,10 @@ client = ollama.Client(host=HOST)
 
 missing = []
 
+    # "EMBED_MODEL": EMBED_MODEL,
 for var, value in {
     "CHAT_MODEL": CHAT_MODEL,
-    "EMBED_MODEL": EMBED_MODEL,
-    "VISION_MODEL": VISION_MODEL
+    "VISION_MODEL": VISION_MODEL,
 }.items():
     if not value:
         missing.append(var)
@@ -39,7 +39,8 @@ try:
 except Exception as e:
     raise RuntimeError(f"No se pudo conectar a Ollama en {HOST}: {e}")
 
-required_models = {CHAT_MODEL, EMBED_MODEL, VISION_MODEL}
+# required_models = {CHAT_MODEL, EMBED_MODEL, VISION_MODEL}
+required_models = {CHAT_MODEL, VISION_MODEL}
 
 missing_models = required_models - available
 

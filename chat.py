@@ -1,21 +1,21 @@
-from pipeline.rag_chat import ask
+# from pipeline.rag_chat import ask
 
 
-def start_chat():
+# def start_chat():
 
-    print("Chat RAG iniciado. Escribe 'exit' para salir.\n")
+#     print("Chat RAG iniciado. Escribe 'exit' para salir.\n")
 
-    while True:
+#     while True:
 
-        q = input("> ")
+#         q = input("> ")
 
-        if q == "exit":
-            break
+#         if q == "exit":
+#             break
 
-        response = ask(q)
+#         response = ask(q)
 
-        print("\n", response, "\n")
+#         print("\n", response, "\n")
 
 
-if __name__ == "__main__":
-    start_chat()
+# if __name__ == "__main__":
+#     start_chat()

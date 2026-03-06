@@ -24,3 +24,13 @@ class DocumentState(TypedDict):
 
     # Flag para saber si se usó OCR
     ocr_used: bool
+
+    # Ruta al archivo JSON de salida donde se guardan las extracciones
+    output_file: str
+
+    # Log de resultados extraídos por los nodos
+    extraction_log: List[Any]
+    
+    
+    
+    

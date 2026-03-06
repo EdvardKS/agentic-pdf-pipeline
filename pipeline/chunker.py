@@ -1,35 +1,35 @@
-from pathlib import Path
+# from pathlib import Path
 
-TMP_DIR = Path("./tmp")
-TMP_DIR.mkdir(exist_ok=True)
+# TMP_DIR = Path("./tmp")
+# TMP_DIR.mkdir(exist_ok=True)
 
-def save_chunks(doc_path, chunks):
+# def save_chunks(doc_path, chunks):
 
-    name = Path(doc_path).stem
-    out = TMP_DIR / f"{name}.chunks.txt"
+#     name = Path(doc_path).stem
+#     out = TMP_DIR / f"{name}.chunks.txt"
 
-    with open(out, "w", encoding="utf-8") as f:
+#     with open(out, "w", encoding="utf-8") as f:
 
-        for i, chunk in enumerate(chunks):
-            f.write(f"\n--- CHUNK {i} ---\n")
-            f.write(chunk)
+#         for i, chunk in enumerate(chunks):
+#             f.write(f"\n--- CHUNK {i} ---\n")
+#             f.write(chunk)
 
-    return str(out)
+#     return str(out)
 
-def semantic_chunk(text, chunk_size=2000, overlap=200):
+# def semantic_chunk(text, chunk_size=2000, overlap=200):
 
-    chunks = []
+#     chunks = []
 
-    start = 0
-    text_length = len(text)
+#     start = 0
+#     text_length = len(text)
 
-    while start < text_length:
+#     while start < text_length:
 
-        end = start + chunk_size
-        chunk = text[start:end]
+#         end = start + chunk_size
+#         chunk = text[start:end]
 
-        chunks.append(chunk)
+#         chunks.append(chunk)
 
-        start = end - overlap
+#         start = end - overlap
 
-    return chunks
+#     return chunks
