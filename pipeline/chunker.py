@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 
 TMP_DIR = Path("./tmp")
 TMP_DIR.mkdir(exist_ok=True)
@@ -17,14 +16,7 @@ def save_chunks(doc_path, chunks):
 
     return str(out)
 
-def semantic_chunk(text, chunk_size=None, overlap=None):
-    if chunk_size is None:
-        chunk_size = int(os.getenv("CHUNK_SIZE", "3000"))
-    if overlap is None:
-        overlap = int(os.getenv("CHUNK_OVERLAP", "120"))
-
-    if overlap >= chunk_size:
-        overlap = max(0, chunk_size // 10)
+def semantic_chunk(text, chunk_size=2000, overlap=200):
 
     chunks = []
 

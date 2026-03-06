@@ -1,10 +1,10 @@
 # Importamos las funciones del pipeline "core".
 # La idea es NO reescribir lógica, solo orquestarla.
 from pipeline.preprocess import extract_raw_text, save_text_artifact
-from pipeline.space.space_ocr import ocr_pdf
+from pipeline.ocr import ocr_pdf
 from pipeline.text_cleaner import clean_text
 from pipeline.chunker import semantic_chunk, save_chunks
-from pipeline.space.space_embeddings import embed_chunks
+from pipeline.embeddings import embed_chunks
 
 # Importamos el tipo de estado (solo para tipado y claridad).
 from pipeline.graph.state import DocumentState
@@ -91,7 +91,6 @@ def embedding_node(state: DocumentState) -> DocumentState:
     # embed_chunks espera algo con doc_id (sha256) y chunks.
     # Le pasamos un dict "tipo doc" mínimo.
     doc_like = {
-        "path": state["path"],
         "sha256": state["sha256"],
         "chunks": state["chunks"],
     }
