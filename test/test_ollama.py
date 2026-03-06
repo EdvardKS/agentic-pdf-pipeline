@@ -11,7 +11,7 @@ print("Host:", OLLAMA_HOST)
 client = ollama.Client(host=OLLAMA_HOST)
 
 response = client.chat(
-    model="mistral:7b",
+    model="gemma3:27b",
     messages=[
         {"role": "user", "content": "Say hello in one sentence"}
     ]

@@ -1,0 +1,107 @@
+{
+  "document_type": "contrato_inmobiliario",
+
+  "description": "Contrato de asesoría relacionado con compraventa o herencia de bienes inmuebles",
+
+  "fields": {
+
+    "nombre_cliente": {
+      "type": "string",
+      "format": "nombre_completo",
+      "description": "Nombre completo del cliente que firma el contrato con la asesoría",
+
+      "rules": [
+        "Puede aparecer después de 'cliente', 'contratante', 'comprador' o 'parte interesada'",
+        "Puede ir precedido de Don o Doña",
+        "Debe ser una persona física"
+      ],
+
+      "examples": [
+        "Juan Pérez García",
+        "María López Fernández",
+        "Carlos Sánchez Martín"
+      ],
+
+      "text_examples": [
+        {
+          "text": "Comparece como cliente Don Juan Pérez García mayor de edad",
+          "value": "Juan Pérez García"
+        },
+        {
+          "text": "El presente contrato se firma entre la asesoría y María López Fernández",
+          "value": "María López Fernández"
+        }
+      ]
+    },
+
+
+    "fecha_contrato": {
+      "type": "date",
+      "format": "ISO-8601 (YYYY-MM-DD)",
+      "description": "Fecha en la que se firma el contrato de asesoría",
+
+      "rules": [
+        "Suele aparecer en la cabecera del contrato",
+        "Puede aparecer después de 'En Madrid a'",
+        "Puede aparecer como 'Fecha de firma'"
+      ],
+
+      "examples": [
+        "2024-03-12",
+        "2023-11-02"
+      ],
+
+      "text_examples": [
+        {
+          "text": "En Madrid a 12 de marzo de 2024",
+          "value": "2024-03-12"
+        },
+        {
+          "text": "Fecha de firma: 03/11/2023",
+          "value": "2023-11-03"
+        }
+      ]
+    },
+
+
+    "direccion_inmueble": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección completa del inmueble objeto del contrato",
+
+      "rules": [
+        "Debe ser una dirección física completa",
+        "Puede aparecer después de 'inmueble situado en'",
+        "Puede aparecer después de 'finca ubicada en'",
+        "Puede incluir calle, número, ciudad y código postal"
+      ],
+
+      "examples": [
+        "Calle Mayor 14, Madrid",
+        "Av. de Europa 23, Valencia",
+        "Calle Gran Vía 10, 28013 Madrid"
+      ],
+
+      "text_examples": [
+        {
+          "text": "El inmueble situado en Calle Mayor 14, Madrid",
+          "value": "Calle Mayor 14, Madrid"
+        },
+        {
+          "text": "Finca ubicada en Av. de Europa 23, Valencia",
+          "value": "Av. de Europa 23, Valencia"
+        }
+      ]
+    }
+
+  },
+
+  "output_format": {
+    "type": "json",
+    "structure": {
+      "nombre_cliente": "string",
+      "fecha_contrato": "YYYY-MM-DD",
+      "direccion_inmueble": "string"
+    }
+  }
+}
