@@ -50,22 +50,21 @@ Extrae del documento los siguientes campos.
 
 {fields_prompt}
 
-Reglas IMPORTANTES:
-- Debes devolver TODOS los campos.
-- No uses null.
-- Si un campo no aparece claramente, busca la mejor aproximación en el documento.
-- Si no es posible encontrarlo, devuelve una cadena vacía "".
+REGLAS OBLIGATORIAS:
 
-Devuelve SOLO JSON válido con esta estructura:
+1. Debes devolver EXCLUSIVAMENTE un JSON válido.
+2. No escribas explicaciones.
+3. No uses listas con *.
+4. No uses markdown.
+5. No escribas texto antes ni después del JSON.
+
+Formato exacto requerido:
 
 {{
-  "nombre_cliente": "",
-  "fecha_contrato": "",
-  "direccion_inmueble": ""
+ "nombre_cliente": "...",
+ "fecha_contrato": "...",
+ "direccion_inmueble": "..."
 }}
-
-NO uses markdown.
-NO uses ```json.
 
 DOCUMENTO:
 {text}

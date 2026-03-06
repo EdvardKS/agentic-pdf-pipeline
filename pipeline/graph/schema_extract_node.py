@@ -2,8 +2,11 @@ import json
 from pathlib import Path
 import re
 
-from pipeline.schema_loader import build_extraction_prompt
+from pipeline.schema_loader import build_extraction_prompt, load_schema
 from pipeline.ollama_client import client, CHAT_MODEL
+
+
+MAX_RETRIES = 3
 
 
 def append_result(file_path, data):
@@ -17,35 +20,81 @@ def append_result(file_path, data):
         json.dump(content, f, indent=2, ensure_ascii=False)
 
 
+def validate_extraction(data, required_fields):
+
+    errors = []
+
+    for field in required_fields:
+
+        if field not in data:
+            errors.append(f"{field} missing")
+
+        elif data[field] in [None, "", "null"]:
+            errors.append(f"{field} empty")
+
+    return errors
+
+
 def schema_extract_node(state):
 
     text = state["clean_text"]
 
     prompt = build_extraction_prompt(text)
 
-    response = client.chat(
-        model=CHAT_MODEL, # type: ignore
-        messages=[{
-            "role": "user",
-            "content": prompt
-        }]
-    ) # type: ignore
+    # cargar schema dinámicamente
+    schema = load_schema()
+    required_fields = list(schema["fields"].keys())
+    print("SCHEMA FIELDS:", required_fields)
+    attempt = 0
+    extracted = {}
 
-    raw_output = response["message"]["content"]
+    while attempt < MAX_RETRIES:
 
-    print("\nLLM RESPONSE:")
-    print(raw_output)
+        response = client.chat(
+            model=CHAT_MODEL, # type: ignore
+            messages=[{
+                "role": "user",
+                "content": prompt
+            }]
+        ) # type: ignore
 
-    # limpiar markdown ```json
-    clean_output = re.sub(r"```json|```", "", raw_output).strip()
+        raw_output = response["message"]["content"]
 
-    try:
-        extracted = json.loads(clean_output)
-    except Exception:
-        extracted = {
-            "error": "json_parse_failed",
-            "raw_response": raw_output
-        }
+        print("\nLLM RESPONSE:")
+        print(raw_output)
+
+        clean_output = re.sub(r"```json|```", "", raw_output).strip()
+
+        try:
+            extracted = json.loads(clean_output)
+        except Exception:
+            extracted = {}
+
+        errors = validate_extraction(extracted, required_fields)
+
+        if not errors:
+            break
+
+        print("VALIDATION FAILED:", errors)
+
+        prompt = f"""
+La extracción anterior tiene errores.
+
+Errores detectados:
+{errors}
+
+Resultado anterior:
+{extracted}
+
+Debes corregir SOLO los campos incorrectos usando el documento.
+
+Documento:
+{text}
+
+Devuelve SOLO JSON válido.
+"""
+
+        attempt += 1
 
     # mantener log en estado
     if "extraction_log" not in state:
