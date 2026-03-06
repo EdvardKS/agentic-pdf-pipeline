@@ -3,8 +3,6 @@
 from pipeline.preprocess import extract_raw_text, save_text_artifact
 from pipeline.ocr import ocr_pdf
 from pipeline.text_cleaner import clean_text
-# from pipeline.chunker import semantic_chunk, save_chunks
-# from pipeline.embeddings import embed_chunks
 
 # Importamos el tipo de estado (solo para tipado y claridad).
 from pipeline.graph.state import DocumentState
@@ -63,26 +61,6 @@ def clean_node(state: DocumentState) -> DocumentState:
     return state
 
 
-def chunk_node(state: DocumentState) -> DocumentState:
-    """
-    Nodo 3: Divide el texto limpio en chunks semánticos y guarda artefacto.
-    """
-
-    # 1) Genera chunks (lista de strings)
-    chunks = semantic_chunk(state["clean_text"])
-    state["chunks"] = chunks
-
-    # 2) Guarda chunks en tmp/ para trazabilidad
-    _chunks_artifact = save_chunks(state["path"], chunks)
-
-    # Opcional: guardar el path del artefacto
-    # state["chunks_artifact"] = _chunks_artifact  # (si lo añades al TypedDict)
-
-    # 3) Devolvemos estado
-    return state
-
-
-def embedding_node(state: DocumentState) -> DocumentState:
     """
     Nodo 4: Genera embeddings por chunk y los deja en state["embeddings"].
     """

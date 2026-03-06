@@ -45,18 +45,27 @@ Ejemplos válidos:
 
     fields_prompt = "\n".join(prompt_sections)
 
-    prompt = f"""
+    prompt = f""" 
 Extrae del documento los siguientes campos.
 
 {fields_prompt}
 
-Devuelve SOLO un JSON válido con esta estructura:
+Reglas IMPORTANTES:
+- Debes devolver TODOS los campos.
+- No uses null.
+- Si un campo no aparece claramente, busca la mejor aproximación en el documento.
+- Si no es posible encontrarlo, devuelve una cadena vacía "".
+
+Devuelve SOLO JSON válido con esta estructura:
 
 {{
   "nombre_cliente": "",
   "fecha_contrato": "",
   "direccion_inmueble": ""
 }}
+
+NO uses markdown.
+NO uses ```json.
 
 DOCUMENTO:
 {text}

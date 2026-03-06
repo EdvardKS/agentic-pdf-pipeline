@@ -81,16 +81,7 @@ def main():
             } 
 
             # Ejecutamos el grafo: extract -> clean -> chunk -> embed
-            result = graph.invoke(state)
-
-            # # Recuperamos embeddings generados
-            # vectors = result["embeddings"]
-
-            # # Los añadimos a tu vector_store en memoria
-            # add_vectors(vectors)
-
-            # print(f"Embeddings generados: {len(vectors)}")
-             
+            result = graph.invoke(state)  
 
         # Al terminar, el índice está listo y arrancamos el chat RAG
         print("\nExtracción completada\n")
