@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 import re
 
 from pipeline.schema_loader import build_extraction_prompt, load_schema
@@ -8,9 +7,16 @@ from pipeline.ollama_client import client, CHAT_MODEL
 
 MAX_RETRIES = 3
 
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+CYAN = "\033[96m"
+YELLOW = "\033[93m"
+GREEN = "\033[92m"
+RED = "\033[91m"
+RESET = "\033[0m"
+
 
 def append_result(file_path, data):
-
     with open(file_path, "r", encoding="utf-8") as f:
         content = json.load(f)
 
@@ -21,88 +27,125 @@ def append_result(file_path, data):
 
 
 def validate_extraction(data, required_fields):
-
     errors = []
 
     for field in required_fields:
-
         if field not in data:
             errors.append(f"{field} missing")
-
         elif data[field] in [None, "", "null"]:
             errors.append(f"{field} empty")
 
     return errors
 
 
-def schema_extract_node(state):
+def extract_json_from_response(raw_output: str) -> dict:
+    clean_output = re.sub(r"```json|```", "", raw_output).strip()
 
+    json_match = re.search(r"\{.*\}", clean_output, re.DOTALL)
+
+    if not json_match:
+        return {}
+
+    json_text = json_match.group(0)
+
+    try:
+        return json.loads(json_text)
+    except Exception:
+        return {}
+
+
+def schema_extract_node(state):
     text = state["clean_text"]
 
     prompt = build_extraction_prompt(text)
 
-    # cargar schema dinámicamente
     schema = load_schema()
     required_fields = list(schema["fields"].keys())
-    print("SCHEMA FIELDS:", required_fields)
+
+    print(f"\n{YELLOW}SCHEMA FIELDS:{RESET} {required_fields}")
+
     attempt = 0
     extracted = {}
 
     while attempt < MAX_RETRIES:
+        print(f"\n{CYAN}==================== ATTEMPT {attempt + 1}/{MAX_RETRIES} ===================={RESET}")
+        # print(f"\n{CYAN}PROMPT ENVIADO AL MODELO:{RESET}")
+        # print(prompt)k
 
-        response = client.chat(
-            model=CHAT_MODEL, # type: ignore
+        stream = client.chat(
+            model=CHAT_MODEL,  # type: ignore
+            stream=True,
+            options={"temperature": 0},
             messages=[{
                 "role": "user",
                 "content": prompt
             }]
-        ) # type: ignore
+        )  # type: ignore
 
-        raw_output = response["message"]["content"]
+        raw_output = ""
 
-        print("\nLLM RESPONSE:")
-        print(raw_output)
+        print(f"\n{BLUE}RESPUESTA DEL MODELO:{RESET}")
+        for chunk in stream:
+            content = chunk["message"].get("content", "")
+            print(content, end="", flush=True)
+            raw_output += content
+        print()
 
-        clean_output = re.sub(r"```json|```", "", raw_output).strip()
+        extracted = extract_json_from_response(raw_output)
 
-        try:
-            extracted = json.loads(clean_output)
-        except Exception:
-            extracted = {}
+        print(f"\n{MAGENTA}JSON PARSEADO:{RESET}")
+        if extracted:
+            print(json.dumps(extracted, indent=2, ensure_ascii=False))
+        else:
+            print(f"{RED}No se pudo parsear JSON válido.{RESET}")
 
         errors = validate_extraction(extracted, required_fields)
 
         if not errors:
+            print(f"\n{GREEN}VALIDACIÓN OK{RESET}")
             break
 
-        print("VALIDATION FAILED:", errors)
+        print(f"\n{YELLOW}VALIDATION FAILED:{RESET} {errors}")
 
         prompt = f"""
-La extracción anterior tiene errores.
+La extracción anterior es incorrecta y debe corregirse.
 
-Errores detectados:
+CAMPOS OBLIGATORIOS:
+{required_fields}
+
+ERRORES DETECTADOS:
 {errors}
 
-Resultado anterior:
-{extracted}
+RESULTADO ANTERIOR:
+{json.dumps(extracted, ensure_ascii=False, indent=2)}
 
-Debes corregir SOLO los campos incorrectos usando el documento.
+INSTRUCCIONES OBLIGATORIAS:
+1. Corrige SOLO los campos incorrectos o ausentes.
+2. Debes devolver TODOS los campos obligatorios.
+3. Devuelve EXCLUSIVAMENTE un JSON válido.
+4. No escribas explicaciones.
+5. No uses markdown.
+6. No uses listas con *.
+7. No escribas texto antes ni después del JSON.
+8. No uses null. Si no encuentras un valor exacto, devuelve la mejor aproximación textual del documento.
 
-Documento:
+Formato exacto requerido:
+{{
+  "nombre_cliente": "",
+  "fecha_contrato": "",
+  "direccion_inmueble": ""
+}}
+
+DOCUMENTO:
 {text}
-
-Devuelve SOLO JSON válido.
 """
-
         attempt += 1
 
-    # mantener log en estado
     if "extraction_log" not in state:
         state["extraction_log"] = []
 
     state["extraction_log"].append(extracted)
 
-    # guardar directamente en outputs JSON
     output_file = state.get("output_file")
 
     if output_file:
