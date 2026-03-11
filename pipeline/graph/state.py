@@ -36,6 +36,9 @@ class DocumentState(TypedDict):
 
     # Key del modelo fiscal seleccionado ("1"…"5")
     selected_model: str
+
+    # Datos normalizados y validados tras el nodo de validación
+    validated_data: Dict[str, Any]
     
     
     

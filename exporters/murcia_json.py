@@ -1,91 +1,95 @@
 """
-Exportador Modelo 600 - Región de Murcia (PACO)
-Genera un JSON normalizado listo para adaptar al formato de importación del
-programa PACO cuando el cliente facilite la especificación técnica.
+Exportador Modelo 600 — Región de Murcia (PACO)
+Salida: {nif}_{YYYY}_{MM}_{DD}.json + {nif}_{YYYY}_{MM}_{DD}.pdf
 """
 
-import json
 from pathlib import Path
+from exporters.base_exporter import build_filename, save_json, PDFReport
+
+MODEL_CONFIG = {"name": "murcia_600"}
+MODEL_LABEL = "Modelo 600 — Región de Murcia (PACO)\nImpuesto sobre Transmisiones Patrimoniales y AJD"
+MODEL_REF = "Autoliquidación ITP/AJD — Programa PACO CARM"
 
 
-def _float(value) -> float:
-    try:
-        return float(str(value).replace(",", ".").replace(" ", ""))
-    except (ValueError, TypeError):
-        return 0.0
-
-
-def export(data: dict, output_dir: str, doc: dict) -> str:
-    """
-    Genera un fichero JSON por documento y lo guarda en output_dir.
-    Devuelve la ruta del fichero generado.
-    """
+def export(data: dict, output_dir: str, doc: dict) -> dict:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    stem = Path(doc["path"]).stem
-    output_path = Path(output_dir) / f"{stem}.json"
+    filename_base = build_filename(data, MODEL_CONFIG)
 
-    valor = _float(data.get("valor_inmueble", 0))
-    pct_transmitido = _float(data.get("porcentaje_transmitido", 100))
-    tipo_gravamen = _float(data.get("tipo_gravamen", 8))
+    json_path = save_json(data, output_dir, filename_base)
+    pdf_path = _build_pdf(data, output_dir, filename_base, doc)
 
-    base_imponible = valor * pct_transmitido / 100
-    cuota = base_imponible * tipo_gravamen / 100
+    print(f"  → JSON: {json_path}")
+    if pdf_path:
+        print(f"  → PDF:  {pdf_path}")
 
-    output = {
-        "modelo": "600",
-        "comunidad": "Región de Murcia",
-        "formato": "PACO_normalizado_v1",
-        "nota": "JSON normalizado pendiente de adaptar al formato de importación de PACO",
-        "presentacion": {
-            "fecha_devengo": data.get("fecha_devengo", ""),
-            "tipo_documento": data.get("tipo_documento", ""),
-            "numero_protocolo": data.get("numero_protocolo", ""),
-            "ejercicio_protocolo": data.get("ejercicio_protocolo", ""),
-            "notario": data.get("notario", "")
-        },
-        "sujeto_pasivo": {
-            "nif": data.get("sujeto_pasivo_nif", ""),
-            "apellido1": data.get("sujeto_pasivo_apellido1", ""),
-            "apellido2": data.get("sujeto_pasivo_apellido2", ""),
-            "nombre": data.get("sujeto_pasivo_nombre", ""),
-            "domicilio": data.get("sujeto_pasivo_domicilio", ""),
-            "municipio": data.get("sujeto_pasivo_municipio", ""),
-            "provincia": data.get("sujeto_pasivo_provincia", ""),
-            "cp": data.get("sujeto_pasivo_cp", ""),
-            "porcentaje_participacion": data.get("sujeto_pasivo_porcentaje", "100")
-        },
-        "transmitente": {
-            "nif": data.get("transmitente_nif", ""),
-            "apellido1": data.get("transmitente_apellido1", ""),
-            "apellido2": data.get("transmitente_apellido2", ""),
-            "nombre": data.get("transmitente_nombre", ""),
-            "domicilio": data.get("transmitente_domicilio", "")
-        },
-        "bien_inmueble": {
-            "descripcion": data.get("inmueble_descripcion", ""),
-            "referencia_catastral": data.get("inmueble_referencia_catastral", ""),
-            "direccion": data.get("inmueble_direccion", ""),
-            "municipio": data.get("inmueble_municipio", ""),
-            "provincia": data.get("inmueble_provincia", ""),
-            "cp": data.get("inmueble_cp", "")
-        },
-        "liquidacion": {
-            "valor_inmueble": data.get("valor_inmueble", ""),
-            "porcentaje_transmitido": data.get("porcentaje_transmitido", "100"),
-            "base_liquidable": round(base_imponible, 2),
-            "tipo_gravamen": data.get("tipo_gravamen", "8"),
-            "cuota": round(cuota, 2),
-            "total_ingresar": round(cuota, 2)
-        },
-        "origen_documento": {
-            "archivo_origen": Path(doc["path"]).name,
-            "sha256": doc.get("sha256", "")
-        }
-    }
+    return {"json": json_path, "pdf": pdf_path}
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2, ensure_ascii=False)
 
-    print(f"  → Exportado: {output_path}")
-    return str(output_path)
+def _build_pdf(data: dict, output_dir: str, filename_base: str, doc: dict) -> str:
+    pdf_output = str(Path(output_dir) / f"{filename_base}.pdf")
+    report = PDFReport(pdf_output, MODEL_LABEL, MODEL_REF)
+
+    report.add_header(Path(doc["path"]).name)
+
+    report.add_section("Datos de Presentación")
+    report.add_fields([
+        ("Fecha devengo", data.get("fecha_devengo", "")),
+        ("Tipo de documento", data.get("tipo_documento", "")),
+        ("Notario", data.get("notario", "")),
+        ("Nº Protocolo", data.get("numero_protocolo", "")),
+        ("Ejercicio protocolo", data.get("ejercicio_protocolo", "")),
+    ])
+
+    report.add_section("Sujeto Pasivo — Adquirente")
+    report.add_fields([
+        ("NIF", data.get("sujeto_pasivo_nif", "")),
+        ("Apellido 1", data.get("sujeto_pasivo_apellido1", "")),
+        ("Apellido 2", data.get("sujeto_pasivo_apellido2", "")),
+        ("Nombre", data.get("sujeto_pasivo_nombre", "")),
+        ("Domicilio", data.get("sujeto_pasivo_domicilio", "")),
+        ("Municipio", data.get("sujeto_pasivo_municipio", "")),
+        ("Provincia", data.get("sujeto_pasivo_provincia", "")),
+        ("Código Postal", data.get("sujeto_pasivo_cp", "")),
+        ("% Participación", data.get("sujeto_pasivo_porcentaje", "100")),
+    ])
+
+    report.add_section("Transmitente — Vendedor / Causante")
+    report.add_fields([
+        ("NIF", data.get("transmitente_nif", "")),
+        ("Apellido 1", data.get("transmitente_apellido1", "")),
+        ("Apellido 2", data.get("transmitente_apellido2", "")),
+        ("Nombre", data.get("transmitente_nombre", "")),
+        ("Domicilio", data.get("transmitente_domicilio", "")),
+    ])
+
+    report.add_section("Bien Inmueble")
+    report.add_fields([
+        ("Descripción", data.get("inmueble_descripcion", "")),
+        ("Referencia Catastral", data.get("inmueble_referencia_catastral", "")),
+        ("Dirección", data.get("inmueble_direccion", "")),
+        ("Municipio", data.get("inmueble_municipio", "")),
+        ("Provincia", data.get("inmueble_provincia", "")),
+        ("Código Postal", data.get("inmueble_cp", "")),
+    ])
+
+    valor = float(data.get("valor_inmueble", 0) or 0)
+    pct = float(data.get("porcentaje_transmitido", 100) or 100)
+    tipo = float(data.get("tipo_gravamen", 8) or 8)
+    base = float(data.get("base_imponible", 0) or round(valor * pct / 100, 2))
+    cuota = float(data.get("cuota_tributaria", 0) or round(base * tipo / 100, 2))
+
+    report.add_calculation_table([
+        ("Valor total del bien", f"{valor:.2f} \u20ac"),
+        ("% Transmitido", f"{pct:.2f}%"),
+        ("Base liquidable", f"{base:.2f} \u20ac"),
+        ("Tipo de gravamen", f"{tipo:.2f}%"),
+        ("Cuota", f"{cuota:.2f} \u20ac", True),
+        ("Total a ingresar", f"{cuota:.2f} \u20ac", True),
+    ], title="Liquidación — Modelo 600 Región de Murcia")
+
+    report.add_warning("Pendiente adaptar al formato de importación PACO cuando el cliente facilite la especificación técnica.")
+
+    report.add_footer(Path(doc["path"]).name, doc.get("sha256", ""))
+
+    return report.save()

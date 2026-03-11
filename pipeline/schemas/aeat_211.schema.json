@@ -21,14 +21,21 @@
     "retenedor_nif": {
       "type": "string",
       "format": "NIF/NIE/CIF",
-      "description": "NIF o NIE del retenedor (comprador del inmueble, quien practica la retención del 3%)",
+      "description": "NIF o NIE del retenedor. El RETENEDOR es el COMPRADOR del inmueble, quien paga el precio y practica la retención del 3% para ingresarla en Hacienda.",
+      "required": true,
       "rules": [
-        "El comprador es quien practica e ingresa la retención",
-        "Puede ser persona física (NIF/NIE) o jurídica (CIF)"
+        "IMPORTANTE: El retenedor es el COMPRADOR, no el vendedor",
+        "Busca las palabras: 'comprador', 'compradora', 'adquirente', 'adquirentes', 'parte compradora', 'parte adquirente'",
+        "Su DNI/NIF está junto a las palabras anteriores",
+        "Puede ser persona física (NIF/NIE) o jurídica (CIF)",
+        "Si hay varios compradores, usa el NIF del primero mencionado",
+        "El comprador es quien PAGA el precio de compra al vendedor no residente"
       ],
       "examples": ["12345678A", "B12345678", "X1234567A"],
       "text_examples": [
-        {"text": "COMPRADORA: MARÍA GARCÍA LÓPEZ, con DNI 12345678A", "value": "12345678A"}
+        {"text": "COMPRADORA: MARÍA GARCÍA LÓPEZ, con DNI 12345678A", "value": "12345678A"},
+        {"text": "PARTE ADQUIRENTE: DON PEDRO RUIZ SANZ, titular del DNI número 27436036A", "value": "27436036A"},
+        {"text": "La parte compradora, FUSTER CONSULTING S.L., con CIF B73214108", "value": "B73214108"}
       ]
     },
     "retenedor_apellido1": {
@@ -142,10 +149,17 @@
     "fecha_transmision": {
       "type": "date",
       "format": "YYYY-MM-DD",
-      "description": "Fecha de la transmisión del inmueble (fecha de la escritura de compraventa)",
-      "rules": ["Fecha de firma de la escritura notarial"],
-      "examples": ["2024-03-12"],
-      "text_examples": []
+      "required": false,
+      "description": "Fecha de la transmisión del inmueble (fecha de la escritura de compraventa). Campo opcional.",
+      "rules": [
+        "Fecha de firma de la escritura notarial",
+        "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'",
+        "Si no aparece explícitamente, dejar vacío"
+      ],
+      "examples": ["2024-03-12", "2026-03-02"],
+      "text_examples": [
+        {"text": "En Murcia a 2 de marzo de 2026", "value": "2026-03-02"}
+      ]
     },
     "inmueble_referencia_catastral": {
       "type": "string",
@@ -204,10 +218,13 @@
     "retencion_3pct": {
       "type": "number",
       "format": "importe_euros",
-      "description": "Importe de la retención practicada (3% de la contraprestación). Calcular si no aparece explícitamente",
+      "required": false,
+      "calculable": true,
+      "description": "Importe de la retención practicada (3% de la contraprestación). Si no aparece en el documento, se calculará automáticamente.",
       "rules": [
         "Retención = contraprestación × 0.03",
-        "Si el precio es 150000, la retención es 4500"
+        "Si el precio es 150000, la retención es 4500",
+        "Si no encuentras este dato en el documento, devuelve cadena vacía — el sistema lo calculará"
       ],
       "examples": ["4500", "7500", "2550"],
       "text_examples": [

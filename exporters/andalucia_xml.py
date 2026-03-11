@@ -1,110 +1,98 @@
 """
-Exportador Modelo 600 - Andalucía
-Genera un XML estructurado con los campos mapeados a las casillas del formulario
-SURWEB de la Junta de Andalucía (ITP/AJD).
+Exportador Modelo 600 — Andalucía (ITP/AJD)
+Salida: {nif}_{YYYY}_{MM}_{DD}.json + {nif}_{YYYY}_{MM}_{DD}.pdf
 """
 
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
 from pathlib import Path
+from exporters.base_exporter import build_filename, save_json, PDFReport
+
+MODEL_CONFIG = {"name": "andalucia_600"}
+MODEL_LABEL = "Modelo 600 — Junta de Andalucía\nImpuesto sobre Transmisiones Patrimoniales y AJD"
+MODEL_REF = "Autoliquidación ITP/AJD — SURWEB Andalucía"
 
 
-def _sub(parent, tag, text=""):
-    el = ET.SubElement(parent, tag)
-    el.text = str(text) if text is not None else ""
-    return el
-
-
-def export(data: dict, output_dir: str, doc: dict) -> str:
-    """
-    Genera un fichero XML por documento y lo guarda en output_dir.
-    Devuelve la ruta del fichero generado.
-    """
+def export(data: dict, output_dir: str, doc: dict) -> dict:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    stem = Path(doc["path"]).stem
-    output_path = Path(output_dir) / f"{stem}.xml"
+    filename_base = build_filename(data, MODEL_CONFIG)
 
-    root = ET.Element("Modelo600Andalucia")
-    root.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-    root.set("version", "1.0")
+    json_path = save_json(data, output_dir, filename_base)
+    pdf_path = _build_pdf(data, output_dir, filename_base, doc)
 
-    # --- Datos de presentación ---
-    presentacion = ET.SubElement(root, "Presentacion")
-    _sub(presentacion, "FechaDevengo", data.get("fecha_devengo", ""))
-    _sub(presentacion, "TipoDocumento", data.get("tipo_documento", ""))
-    _sub(presentacion, "NumeroProtocolo", data.get("numero_protocolo", ""))
-    _sub(presentacion, "EjercicioProtocolo", data.get("ejercicio_protocolo", ""))
-    _sub(presentacion, "Notario", data.get("notario", ""))
+    print(f"  → JSON: {json_path}")
+    if pdf_path:
+        print(f"  → PDF:  {pdf_path}")
 
-    # --- Sujeto Pasivo (adquirente) ---
-    sujeto = ET.SubElement(root, "SujetoPasivo")
-    _sub(sujeto, "NIF", data.get("sujeto_pasivo_nif", ""))
-    _sub(sujeto, "Apellido1", data.get("sujeto_pasivo_apellido1", ""))
-    _sub(sujeto, "Apellido2", data.get("sujeto_pasivo_apellido2", ""))
-    _sub(sujeto, "Nombre", data.get("sujeto_pasivo_nombre", ""))
-    _sub(sujeto, "Domicilio", data.get("sujeto_pasivo_domicilio", ""))
-    _sub(sujeto, "Municipio", data.get("sujeto_pasivo_municipio", ""))
-    _sub(sujeto, "Provincia", data.get("sujeto_pasivo_provincia", ""))
-    _sub(sujeto, "CodigoPostal", data.get("sujeto_pasivo_cp", ""))
-    _sub(sujeto, "PorcentajeParticipacion", data.get("sujeto_pasivo_porcentaje", "100"))
-
-    # --- Transmitente ---
-    transmitente = ET.SubElement(root, "Transmitente")
-    _sub(transmitente, "NIF", data.get("transmitente_nif", ""))
-    _sub(transmitente, "Apellido1", data.get("transmitente_apellido1", ""))
-    _sub(transmitente, "Apellido2", data.get("transmitente_apellido2", ""))
-    _sub(transmitente, "Nombre", data.get("transmitente_nombre", ""))
-    _sub(transmitente, "Domicilio", data.get("transmitente_domicilio", ""))
-
-    # --- Bien Inmueble ---
-    inmueble = ET.SubElement(root, "BienInmueble")
-    _sub(inmueble, "Descripcion", data.get("inmueble_descripcion", ""))
-    _sub(inmueble, "ReferenciaCatastral", data.get("inmueble_referencia_catastral", ""))
-    _sub(inmueble, "Direccion", data.get("inmueble_direccion", ""))
-    _sub(inmueble, "Municipio", data.get("inmueble_municipio", ""))
-    _sub(inmueble, "Provincia", data.get("inmueble_provincia", ""))
-    _sub(inmueble, "CodigoPostal", data.get("inmueble_cp", ""))
-
-    # --- Liquidación (casillas) ---
-    liquidacion = ET.SubElement(root, "Liquidacion")
-    _sub(liquidacion, "Casilla69_ValorTotalBien", data.get("valor_inmueble", ""))
-    _sub(liquidacion, "PorcentajeTransmitido", data.get("porcentaje_transmitido", "100"))
-
-    valor = _float(data.get("valor_inmueble", 0))
-    pct_transmitido = _float(data.get("porcentaje_transmitido", 100))
-    tipo_gravamen = _float(data.get("tipo_gravamen", 8))
-
-    base_imponible = valor * pct_transmitido / 100
-    cuota = base_imponible * tipo_gravamen / 100
-
-    _sub(liquidacion, "Casilla72_BaseLiquidable", f"{base_imponible:.2f}")
-    _sub(liquidacion, "TipoGravamen", data.get("tipo_gravamen", ""))
-    _sub(liquidacion, "Casilla74_Cuota", f"{cuota:.2f}")
-    _sub(liquidacion, "Casilla80_TotalIngresar", f"{cuota:.2f}")
-
-    # --- Metadata de origen ---
-    origen = ET.SubElement(root, "OrigenDocumento")
-    _sub(origen, "ArchivoOrigen", Path(doc["path"]).name)
-    _sub(origen, "SHA256", doc.get("sha256", ""))
-
-    xml_str = minidom.parseString(
-        ET.tostring(root, encoding="unicode")
-    ).toprettyxml(indent="  ", encoding=None)
-
-    # minidom añade declaración XML; la escribimos con encoding utf-8
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-        # Saltar la primera línea que añade minidom (su propia declaración)
-        lines = xml_str.split("\n")
-        f.write("\n".join(lines[1:]))
-
-    print(f"  → Exportado: {output_path}")
-    return str(output_path)
+    return {"json": json_path, "pdf": pdf_path}
 
 
-def _float(value) -> float:
-    try:
-        return float(str(value).replace(",", ".").replace(" ", ""))
-    except (ValueError, TypeError):
-        return 0.0
+def _build_pdf(data: dict, output_dir: str, filename_base: str, doc: dict) -> str:
+    pdf_output = str(Path(output_dir) / f"{filename_base}.pdf")
+    report = PDFReport(pdf_output, MODEL_LABEL, MODEL_REF)
+
+    report.add_header(Path(doc["path"]).name)
+
+    # Presentación
+    report.add_section("Datos de Presentación")
+    report.add_fields([
+        ("Fecha devengo", data.get("fecha_devengo", "")),
+        ("Tipo de documento", data.get("tipo_documento", "")),
+        ("Notario", data.get("notario", "")),
+        ("Nº Protocolo", data.get("numero_protocolo", "")),
+        ("Ejercicio protocolo", data.get("ejercicio_protocolo", "")),
+    ])
+
+    # Sujeto pasivo
+    report.add_section("Sujeto Pasivo — Adquirente")
+    report.add_fields([
+        ("NIF", data.get("sujeto_pasivo_nif", "")),
+        ("Apellido 1", data.get("sujeto_pasivo_apellido1", "")),
+        ("Apellido 2", data.get("sujeto_pasivo_apellido2", "")),
+        ("Nombre", data.get("sujeto_pasivo_nombre", "")),
+        ("Domicilio", data.get("sujeto_pasivo_domicilio", "")),
+        ("Municipio", data.get("sujeto_pasivo_municipio", "")),
+        ("Provincia", data.get("sujeto_pasivo_provincia", "")),
+        ("Código Postal", data.get("sujeto_pasivo_cp", "")),
+        ("% Participación", data.get("sujeto_pasivo_porcentaje", "100")),
+    ])
+
+    # Transmitente
+    report.add_section("Transmitente — Vendedor / Causante")
+    report.add_fields([
+        ("NIF", data.get("transmitente_nif", "")),
+        ("Apellido 1", data.get("transmitente_apellido1", "")),
+        ("Apellido 2", data.get("transmitente_apellido2", "")),
+        ("Nombre", data.get("transmitente_nombre", "")),
+        ("Domicilio", data.get("transmitente_domicilio", "")),
+    ])
+
+    # Inmueble
+    report.add_section("Bien Inmueble")
+    report.add_fields([
+        ("Descripción", data.get("inmueble_descripcion", "")),
+        ("Referencia Catastral", data.get("inmueble_referencia_catastral", "")),
+        ("Dirección", data.get("inmueble_direccion", "")),
+        ("Municipio", data.get("inmueble_municipio", "")),
+        ("Provincia", data.get("inmueble_provincia", "")),
+        ("Código Postal", data.get("inmueble_cp", "")),
+    ])
+
+    # Liquidación
+    valor = float(data.get("valor_inmueble", 0) or 0)
+    pct = float(data.get("porcentaje_transmitido", 100) or 100)
+    tipo = float(data.get("tipo_gravamen", 8) or 8)
+    base = float(data.get("base_imponible", 0) or round(valor * pct / 100, 2))
+    cuota = float(data.get("cuota_tributaria", 0) or round(base * tipo / 100, 2))
+
+    report.add_calculation_table([
+        ("Casilla 69 — Valor total del bien", f"{valor:.2f} \u20ac"),
+        ("% Transmitido", f"{pct:.2f}%"),
+        ("Casilla 72 — Base liquidable", f"{base:.2f} \u20ac"),
+        ("Tipo de gravamen", f"{tipo:.2f}%"),
+        ("Casilla 74 — Cuota", f"{cuota:.2f} \u20ac", True),
+        ("Casilla 80 — Total a ingresar", f"{cuota:.2f} \u20ac", True),
+    ], title="Liquidación — Casillas Modelo 600 Andalucía")
+
+    report.add_footer(Path(doc["path"]).name, doc.get("sha256", ""))
+
+    return report.save()

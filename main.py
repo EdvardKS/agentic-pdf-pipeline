@@ -106,19 +106,24 @@ def main():
             "chunks": [],
             "embeddings": [],
             "ocr_used": False,
-            "output_file": "",        # no usamos el output_file legacy por modelo
+            "output_file": "",
             "extraction_log": [],
             "schema": schema,
             "selected_model": choice,
+            "validated_data": {},
         }
 
         result = graph.invoke(state)
 
-        extraction_log = result.get("extraction_log", [])
-        if extraction_log:
-            extracted = extraction_log[-1]
+        # Usar validated_data (normalizado) si existe, fallback a extraction_log
+        validated = result.get("validated_data") or {}
+        if not validated:
+            extraction_log = result.get("extraction_log", [])
+            validated = extraction_log[-1] if extraction_log else {}
+
+        if validated:
             try:
-                exporter(extracted, output_dir, doc)
+                exporter(validated, output_dir, doc)
                 docs_exportados += 1
             except Exception as e:
                 print(f"  {RED}Error al exportar {doc['path']}: {e}{RESET}")

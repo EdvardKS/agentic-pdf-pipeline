@@ -1,129 +1,95 @@
 """
-Exportador AEAT Modelo 211
-Genera un fichero en formato texto estructurado compatible con el diseño de
-registro publicado por la AEAT para el Modelo 211 (Retención e ingreso a
-cuenta por adquisición de inmuebles a no residentes).
-
-Nombre del fichero: NIF_YYYY_0A.211
+Exportador AEAT Modelo 211 — Retención no residentes
+Salida: {nif}_{YYYY}_{MM}_{DD}.json + {nif}_{YYYY}_{MM}_{DD}.pdf
 """
 
 from pathlib import Path
+from exporters.base_exporter import build_filename, save_json, PDFReport
+
+MODEL_CONFIG = {"name": "aeat_211"}
+MODEL_LABEL = "AEAT Modelo 211 — Retención e ingreso a cuenta\npor adquisición de inmuebles a no residentes (IRNR)"
+MODEL_REF = "Art. 25.2 LIRNR / RD 1776/2004"
 
 
-def _float(value) -> float:
-    try:
-        return float(str(value).replace(",", ".").replace(" ", ""))
-    except (ValueError, TypeError):
-        return 0.0
-
-
-def _fmt_importe(value, decimales=2, longitud=17) -> str:
-    """Formatea un importe en céntimos (entero) sin punto decimal, relleno con ceros a la izquierda."""
-    try:
-        importe_centimos = int(round(_float(value) * 100))
-    except Exception:
-        importe_centimos = 0
-    return str(importe_centimos).zfill(longitud)
-
-
-def _pad(value, length, fill=" ", align="left") -> str:
-    s = str(value) if value is not None else ""
-    s = s[:length]
-    if align == "left":
-        return s.ljust(length, fill)
-    return s.rjust(length, fill)
-
-
-def export(data: dict, output_dir: str, doc: dict) -> str:
+def export(data: dict, output_dir: str, doc: dict) -> dict:
     """
-    Genera un fichero .211 por documento y lo guarda en output_dir.
-    Devuelve la ruta del fichero generado.
+    Genera {nif}_{YYYY}_{MM}_{DD}.json y .pdf en output_dir.
+    Devuelve {"json": path, "pdf": path}.
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    nif = data.get("retenedor_nif", "UNKNOWN").replace(" ", "").upper()
-    ejercicio = str(data.get("ejercicio", "2024"))
-    periodo = "0A"
+    filename_base = build_filename(data, MODEL_CONFIG)
 
-    filename = f"{nif}_{ejercicio}_{periodo}.211"
-    output_path = Path(output_dir) / filename
+    # ---- JSON ----
+    json_path = save_json(data, output_dir, filename_base)
 
-    contraprestacion = _float(data.get("contraprestacion", 0))
-    retencion = _float(data.get("retencion_3pct", 0))
+    # ---- PDF ----
+    pdf_path = _build_pdf(data, output_dir, filename_base, doc)
 
-    # Si no se extrajo la retención, calcularla
-    if retencion == 0 and contraprestacion > 0:
-        retencion = round(contraprestacion * 0.03, 2)
+    print(f"  → JSON: {json_path}")
+    if pdf_path:
+        print(f"  → PDF:  {pdf_path}")
 
-    # -----------------------------------------------------------------------
-    # Registro tipo 1 — Identificación del declarante (retenedor/comprador)
-    # Formato simplificado basado en el diseño de registro AEAT 211
-    # -----------------------------------------------------------------------
-    lineas = []
+    return {"json": json_path, "pdf": pdf_path}
 
-    # Cabecera del fichero
-    lineas.append(
-        "<T211>"
-        f"<Ejercicio>{ejercicio}</Ejercicio>"
-        f"<Periodo>{periodo}</Periodo>"
-        f"<NIF_Retenedor>{_pad(nif, 9)}</NIF_Retenedor>"
-        f"<Apellido1_Retenedor>{_pad(data.get('retenedor_apellido1', ''), 50)}</Apellido1_Retenedor>"
-        f"<Apellido2_Retenedor>{_pad(data.get('retenedor_apellido2', ''), 50)}</Apellido2_Retenedor>"
-        f"<Nombre_Retenedor>{_pad(data.get('retenedor_nombre', ''), 40)}</Nombre_Retenedor>"
-        f"<Domicilio_Retenedor>{_pad(data.get('retenedor_domicilio', ''), 80)}</Domicilio_Retenedor>"
-        f"<Municipio_Retenedor>{_pad(data.get('retenedor_municipio', ''), 40)}</Municipio_Retenedor>"
-        f"<Provincia_Retenedor>{_pad(data.get('retenedor_provincia', ''), 30)}</Provincia_Retenedor>"
-        f"<CP_Retenedor>{_pad(data.get('retenedor_cp', ''), 5)}</CP_Retenedor>"
-    )
 
-    # Datos del transmitente no residente
-    lineas.append(
-        f"<NIF_Transmitente_NR>{_pad(data.get('transmitente_nr_nif', ''), 20)}</NIF_Transmitente_NR>"
-        f"<Apellido1_Transmitente>{_pad(data.get('transmitente_nr_apellido1', ''), 50)}</Apellido1_Transmitente>"
-        f"<Apellido2_Transmitente>{_pad(data.get('transmitente_nr_apellido2', ''), 50)}</Apellido2_Transmitente>"
-        f"<Nombre_Transmitente>{_pad(data.get('transmitente_nr_nombre', ''), 40)}</Nombre_Transmitente>"
-        f"<Pais_Residencia>{_pad(data.get('transmitente_nr_pais_residencia', ''), 2)}</Pais_Residencia>"
-    )
+def _build_pdf(data: dict, output_dir: str, filename_base: str, doc: dict) -> str:
+    pdf_output = str(Path(output_dir) / f"{filename_base}.pdf")
+    report = PDFReport(pdf_output, MODEL_LABEL, MODEL_REF)
 
-    # Datos del inmueble
-    lineas.append(
-        f"<Fecha_Transmision>{data.get('fecha_transmision', '')}</Fecha_Transmision>"
-        f"<Ref_Catastral>{_pad(data.get('inmueble_referencia_catastral', ''), 20)}</Ref_Catastral>"
-        f"<Direccion_Inmueble>{_pad(data.get('inmueble_direccion', ''), 80)}</Direccion_Inmueble>"
-        f"<Municipio_Inmueble>{_pad(data.get('inmueble_municipio', ''), 40)}</Municipio_Inmueble>"
-        f"<Provincia_Inmueble>{_pad(data.get('inmueble_provincia', ''), 30)}</Provincia_Inmueble>"
-        f"<CP_Inmueble>{_pad(data.get('inmueble_cp', ''), 5)}</CP_Inmueble>"
-    )
+    report.add_header(Path(doc["path"]).name)
 
-    # Importes
-    lineas.append(
-        f"<Contraprestacion>{_fmt_importe(contraprestacion)}</Contraprestacion>"
-        f"<Retencion_3pct>{_fmt_importe(retencion)}</Retencion_3pct>"
-        "</T211>"
-    )
+    # Sección: Retenedor (comprador)
+    report.add_section("Retenedor — Comprador (quien practica la retención)")
+    report.add_fields([
+        ("NIF Retenedor", data.get("retenedor_nif", "")),
+        ("Apellido 1", data.get("retenedor_apellido1", "")),
+        ("Apellido 2", data.get("retenedor_apellido2", "")),
+        ("Nombre / Razón Social", data.get("retenedor_nombre", "")),
+        ("Domicilio fiscal", data.get("retenedor_domicilio", "")),
+        ("Municipio", data.get("retenedor_municipio", "")),
+        ("Provincia", data.get("retenedor_provincia", "")),
+        ("Código Postal", data.get("retenedor_cp", "")),
+    ])
 
-    # --- Bloque de datos legibles (comentario para revisión humana) ---
-    resumen = [
-        "# MODELO 211 - AEAT - Retención no residentes",
-        f"# Fichero: {filename}",
-        f"# Origen: {Path(doc['path']).name}",
-        f"# SHA256: {doc.get('sha256', '')}",
-        "#",
-        f"# Retenedor (comprador): {data.get('retenedor_nombre', '')} {data.get('retenedor_apellido1', '')} {data.get('retenedor_apellido2', '')}",
-        f"# NIF retenedor: {nif}",
-        f"# Transmitente NR (vendedor): {data.get('transmitente_nr_nombre', '')} {data.get('transmitente_nr_apellido1', '')}",
-        f"# País residencia transmitente: {data.get('transmitente_nr_pais_residencia', '')}",
-        f"# Inmueble: {data.get('inmueble_direccion', '')}",
-        f"# Fecha transmisión: {data.get('fecha_transmision', '')}",
-        f"# Contraprestación: {contraprestacion:.2f} EUR",
-        f"# Retención 3%: {retencion:.2f} EUR",
-        "#",
-    ]
+    # Sección: Transmitente No Residente (vendedor)
+    report.add_section("Transmitente No Residente — Vendedor")
+    report.add_fields([
+        ("NIF / ID Fiscal", data.get("transmitente_nr_nif", "")),
+        ("Apellido 1", data.get("transmitente_nr_apellido1", "")),
+        ("Apellido 2", data.get("transmitente_nr_apellido2", "")),
+        ("Nombre", data.get("transmitente_nr_nombre", "")),
+        ("País de residencia (ISO)", data.get("transmitente_nr_pais_residencia", "")),
+    ])
 
-    content = "\n".join(resumen) + "\n" + "".join(lineas) + "\n"
+    # Sección: Inmueble
+    report.add_section("Bien Inmueble")
+    report.add_fields([
+        ("Referencia Catastral", data.get("inmueble_referencia_catastral", "")),
+        ("Dirección", data.get("inmueble_direccion", "")),
+        ("Municipio", data.get("inmueble_municipio", "")),
+        ("Provincia", data.get("inmueble_provincia", "")),
+        ("Código Postal", data.get("inmueble_cp", "")),
+        ("Fecha de transmisión", data.get("fecha_transmision", "")),
+    ])
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(content)
+    # Sección: Liquidación
+    contraprestacion = data.get("contraprestacion", 0)
+    retencion = data.get("retencion_3pct", 0)
 
-    print(f"  → Exportado: {output_path}")
-    return str(output_path)
+    report.add_calculation_table([
+        ("Contraprestación (precio de venta)", f"{float(contraprestacion):.2f} €" if contraprestacion else "—"),
+        ("Retención 3% (Base × 3%)", f"{float(retencion):.2f} €" if retencion else "—", True),
+        ("Ejercicio", data.get("ejercicio", "")),
+        ("Período", data.get("periodo", "0A")),
+    ], title="Liquidación — Casillas Modelo 211")
+
+    # Advertencias si hay campos vacíos clave
+    if not data.get("retenedor_nif"):
+        report.add_warning("NIF del retenedor (comprador) no encontrado en el documento")
+    if not data.get("fecha_transmision"):
+        report.add_warning("Fecha de transmisión no encontrada — verificar manualmente")
+
+    report.add_footer(Path(doc["path"]).name, doc.get("sha256", ""))
+
+    return report.save()
