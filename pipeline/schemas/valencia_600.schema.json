@@ -1,0 +1,245 @@
+{
+  "document_type": "modelo_600_valencia",
+  "description": "Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados - Comunitat Valenciana",
+  "fields": {
+    "fecha_devengo": {
+      "type": "date",
+      "format": "YYYY-MM-DD",
+      "description": "Fecha en que se produce el hecho imponible (firma de la escritura)",
+      "rules": [
+        "Es la fecha de la escritura notarial",
+        "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'"
+      ],
+      "examples": ["2024-03-12", "2023-11-02"],
+      "text_examples": [
+        {"text": "En Valencia a 12 de marzo de 2024", "value": "2024-03-12"}
+      ]
+    },
+    "tipo_documento": {
+      "type": "string",
+      "format": "categoria",
+      "description": "Tipo de acto jurídico: compraventa, herencia, donación, disolución de condominio, etc.",
+      "rules": [],
+      "examples": ["compraventa", "herencia", "donación", "adjudicación de herencia"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_nif": {
+      "type": "string",
+      "format": "NIF/NIE",
+      "description": "NIF o NIE del sujeto pasivo (quien adquiere: comprador, heredero o donatario)",
+      "rules": [
+        "Formato NIF: 8 dígitos + letra",
+        "Formato NIE: X/Y/Z + 7 dígitos + letra"
+      ],
+      "examples": ["12345678A", "X1234567A"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_apellido1": {
+      "type": "string",
+      "format": "texto",
+      "description": "Primer apellido del sujeto pasivo",
+      "rules": [],
+      "examples": ["GARCÍA", "MARTÍNEZ"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_apellido2": {
+      "type": "string",
+      "format": "texto",
+      "description": "Segundo apellido del sujeto pasivo",
+      "rules": [],
+      "examples": ["LÓPEZ", "FERNÁNDEZ"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_nombre": {
+      "type": "string",
+      "format": "texto",
+      "description": "Nombre de pila del sujeto pasivo",
+      "rules": [],
+      "examples": ["MARÍA", "JUAN"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_domicilio": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Domicilio fiscal del sujeto pasivo",
+      "rules": [],
+      "examples": ["Calle Colón 14, 3º A"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_municipio": {
+      "type": "string",
+      "format": "texto",
+      "description": "Municipio del domicilio del sujeto pasivo",
+      "rules": [],
+      "examples": ["Valencia", "Alicante", "Castellón"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_provincia": {
+      "type": "string",
+      "format": "texto",
+      "description": "Provincia del domicilio del sujeto pasivo",
+      "rules": [],
+      "examples": ["Valencia", "Alicante", "Castellón"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_cp": {
+      "type": "string",
+      "format": "codigo_postal_5_digitos",
+      "description": "Código postal del domicilio del sujeto pasivo",
+      "rules": [],
+      "examples": ["46001", "03001", "12001"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_porcentaje": {
+      "type": "number",
+      "format": "porcentaje (0-100)",
+      "description": "Porcentaje de participación adquirido por el sujeto pasivo",
+      "rules": ["Normalmente 100 si es el único adquirente"],
+      "examples": ["100", "50"],
+      "text_examples": []
+    },
+    "transmitente_nif": {
+      "type": "string",
+      "format": "NIF/NIE/CIF",
+      "description": "NIF, NIE o CIF del transmitente (vendedor, causante o donante)",
+      "rules": [],
+      "examples": ["87654321B"],
+      "text_examples": []
+    },
+    "transmitente_apellido1": {
+      "type": "string",
+      "format": "texto",
+      "description": "Primer apellido del transmitente",
+      "rules": [],
+      "examples": ["MARTÍNEZ"],
+      "text_examples": []
+    },
+    "transmitente_apellido2": {
+      "type": "string",
+      "format": "texto",
+      "description": "Segundo apellido del transmitente",
+      "rules": [],
+      "examples": ["RUIZ"],
+      "text_examples": []
+    },
+    "transmitente_nombre": {
+      "type": "string",
+      "format": "texto",
+      "description": "Nombre de pila del transmitente",
+      "rules": [],
+      "examples": ["PEDRO"],
+      "text_examples": []
+    },
+    "transmitente_domicilio": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección del transmitente",
+      "rules": [],
+      "examples": ["Calle Paz 3, 2º B, Valencia"],
+      "text_examples": []
+    },
+    "notario": {
+      "type": "string",
+      "format": "nombre_completo",
+      "description": "Nombre y apellidos del notario autorizante",
+      "rules": ["Puede ir precedido de 'ante mí' o 'ante el Notario'"],
+      "examples": ["Juan García López"],
+      "text_examples": []
+    },
+    "numero_protocolo": {
+      "type": "string",
+      "format": "numero",
+      "description": "Número de protocolo notarial",
+      "rules": [],
+      "examples": ["1234", "567"],
+      "text_examples": []
+    },
+    "ejercicio_protocolo": {
+      "type": "string",
+      "format": "YYYY",
+      "description": "Año del protocolo notarial",
+      "rules": [],
+      "examples": ["2024", "2023"],
+      "text_examples": []
+    },
+    "inmueble_descripcion": {
+      "type": "string",
+      "format": "texto_largo",
+      "description": "Descripción del bien inmueble transmitido",
+      "rules": ["Incluye tipo, superficie, planta, referencia registral si aparece"],
+      "examples": ["Vivienda unifamiliar de 120 m²"],
+      "text_examples": []
+    },
+    "inmueble_referencia_catastral": {
+      "type": "string",
+      "format": "referencia_catastral",
+      "description": "Referencia catastral del inmueble (20 caracteres)",
+      "rules": [],
+      "examples": ["0012301YJ2701A0001TK"],
+      "text_examples": []
+    },
+    "inmueble_direccion": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección completa del inmueble transmitido",
+      "rules": ["Puede aparecer después de 'sito en', 'ubicado en', 'situado en'"],
+      "examples": ["Calle Colón 12, 1ºA, Valencia"],
+      "text_examples": []
+    },
+    "inmueble_municipio": {
+      "type": "string",
+      "format": "texto",
+      "description": "Municipio donde se ubica el inmueble",
+      "rules": [],
+      "examples": ["Valencia", "Alicante", "Benidorm"],
+      "text_examples": []
+    },
+    "inmueble_provincia": {
+      "type": "string",
+      "format": "texto",
+      "description": "Provincia donde se ubica el inmueble",
+      "rules": [],
+      "examples": ["Valencia", "Alicante", "Castellón"],
+      "text_examples": []
+    },
+    "inmueble_cp": {
+      "type": "string",
+      "format": "codigo_postal_5_digitos",
+      "description": "Código postal del inmueble",
+      "rules": [],
+      "examples": ["46001", "03001"],
+      "text_examples": []
+    },
+    "valor_inmueble": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Valor declarado del inmueble o precio de compraventa en euros",
+      "rules": ["Solo el número, sin símbolo de moneda ni separadores de miles"],
+      "examples": ["150000", "250000"],
+      "text_examples": [
+        {"text": "por precio de CIENTO CINCUENTA MIL EUROS (150.000 €)", "value": "150000"}
+      ]
+    },
+    "porcentaje_transmitido": {
+      "type": "number",
+      "format": "porcentaje (0-100)",
+      "description": "Porcentaje de la propiedad que se transmite",
+      "rules": ["Normalmente 100"],
+      "examples": ["100", "50"],
+      "text_examples": []
+    },
+    "tipo_gravamen": {
+      "type": "number",
+      "format": "porcentaje",
+      "description": "Tipo impositivo aplicable (Comunitat Valenciana: 10% general, reducciones posibles)",
+      "rules": [],
+      "examples": ["10", "8"],
+      "text_examples": []
+    }
+  },
+  "output_format": {
+    "type": "xml",
+    "target": "Modelo 600 Comunitat Valenciana - SARA2600",
+    "note": "XML normalizado compatible con el portal SARA2. Casillas pendientes de confirmar con exportación real del sistema."
+  }
+}

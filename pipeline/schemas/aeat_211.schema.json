@@ -1,0 +1,224 @@
+{
+  "document_type": "aeat_modelo_211",
+  "description": "Retención e ingreso a cuenta por adquisición de inmuebles a no residentes (IRNR) - AEAT Modelo 211",
+  "fields": {
+    "ejercicio": {
+      "type": "string",
+      "format": "YYYY",
+      "description": "Año fiscal al que corresponde la declaración (año en que se realiza la compraventa)",
+      "rules": ["Año en 4 dígitos del momento de la transmisión"],
+      "examples": ["2024", "2023"],
+      "text_examples": []
+    },
+    "periodo": {
+      "type": "string",
+      "format": "0A (periodo único anual)",
+      "description": "Período de declaración del modelo 211. Siempre es 0A (período único)",
+      "rules": ["Siempre '0A' para el modelo 211"],
+      "examples": ["0A"],
+      "text_examples": []
+    },
+    "retenedor_nif": {
+      "type": "string",
+      "format": "NIF/NIE/CIF",
+      "description": "NIF o NIE del retenedor (comprador del inmueble, quien practica la retención del 3%)",
+      "rules": [
+        "El comprador es quien practica e ingresa la retención",
+        "Puede ser persona física (NIF/NIE) o jurídica (CIF)"
+      ],
+      "examples": ["12345678A", "B12345678", "X1234567A"],
+      "text_examples": [
+        {"text": "COMPRADORA: MARÍA GARCÍA LÓPEZ, con DNI 12345678A", "value": "12345678A"}
+      ]
+    },
+    "retenedor_apellido1": {
+      "type": "string",
+      "format": "texto",
+      "description": "Primer apellido del retenedor (comprador)",
+      "rules": [],
+      "examples": ["GARCÍA"],
+      "text_examples": []
+    },
+    "retenedor_apellido2": {
+      "type": "string",
+      "format": "texto",
+      "description": "Segundo apellido del retenedor (comprador)",
+      "rules": [],
+      "examples": ["LÓPEZ"],
+      "text_examples": []
+    },
+    "retenedor_nombre": {
+      "type": "string",
+      "format": "texto",
+      "description": "Nombre del retenedor (comprador) o razón social si es persona jurídica",
+      "rules": [],
+      "examples": ["MARÍA", "Inversiones XYZ SL"],
+      "text_examples": []
+    },
+    "retenedor_domicilio": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Domicilio fiscal del retenedor (comprador)",
+      "rules": [],
+      "examples": ["Calle Mayor 14, 3ºA, Madrid"],
+      "text_examples": []
+    },
+    "retenedor_municipio": {
+      "type": "string",
+      "format": "texto",
+      "description": "Municipio del domicilio fiscal del retenedor",
+      "rules": [],
+      "examples": ["Madrid", "Barcelona", "Valencia"],
+      "text_examples": []
+    },
+    "retenedor_provincia": {
+      "type": "string",
+      "format": "texto",
+      "description": "Provincia del domicilio fiscal del retenedor",
+      "rules": [],
+      "examples": ["Madrid", "Barcelona"],
+      "text_examples": []
+    },
+    "retenedor_cp": {
+      "type": "string",
+      "format": "codigo_postal_5_digitos",
+      "description": "Código postal del domicilio del retenedor",
+      "rules": [],
+      "examples": ["28001", "08001"],
+      "text_examples": []
+    },
+    "transmitente_nr_nif": {
+      "type": "string",
+      "format": "NIF/NIE/identificacion_extranjera",
+      "description": "Identificación fiscal del transmitente no residente (vendedor). Puede ser NIE español o número de identificación extranjero",
+      "rules": [
+        "El transmitente es el vendedor no residente en España",
+        "Si tiene NIE: X/Y/Z + 7 dígitos + letra",
+        "Si no tiene NIE: número de identificación del país de residencia"
+      ],
+      "examples": ["X7654321C", "FR1234567890"],
+      "text_examples": [
+        {"text": "VENDEDOR: PIERRE DUPONT, pasaporte FR1234567890, residente en Francia", "value": "FR1234567890"}
+      ]
+    },
+    "transmitente_nr_apellido1": {
+      "type": "string",
+      "format": "texto",
+      "description": "Primer apellido o primer componente del nombre del transmitente no residente",
+      "rules": [],
+      "examples": ["DUPONT", "SMITH"],
+      "text_examples": []
+    },
+    "transmitente_nr_apellido2": {
+      "type": "string",
+      "format": "texto",
+      "description": "Segundo apellido del transmitente no residente (si lo tiene)",
+      "rules": ["Puede estar vacío si el transmitente es de país con un solo apellido"],
+      "examples": ["MARTIN", ""],
+      "text_examples": []
+    },
+    "transmitente_nr_nombre": {
+      "type": "string",
+      "format": "texto",
+      "description": "Nombre de pila del transmitente no residente",
+      "rules": [],
+      "examples": ["PIERRE", "JOHN"],
+      "text_examples": []
+    },
+    "transmitente_nr_pais_residencia": {
+      "type": "string",
+      "format": "codigo_pais_ISO_3166_alfa2",
+      "description": "Código de país de residencia fiscal del transmitente no residente",
+      "rules": [
+        "Código ISO 3166-1 alfa-2 de 2 letras",
+        "FR=Francia, GB=Reino Unido, DE=Alemania, IT=Italia, PT=Portugal"
+      ],
+      "examples": ["FR", "GB", "DE", "IT", "PT", "US"],
+      "text_examples": [
+        {"text": "residente en Francia", "value": "FR"},
+        {"text": "residente en el Reino Unido", "value": "GB"}
+      ]
+    },
+    "fecha_transmision": {
+      "type": "date",
+      "format": "YYYY-MM-DD",
+      "description": "Fecha de la transmisión del inmueble (fecha de la escritura de compraventa)",
+      "rules": ["Fecha de firma de la escritura notarial"],
+      "examples": ["2024-03-12"],
+      "text_examples": []
+    },
+    "inmueble_referencia_catastral": {
+      "type": "string",
+      "format": "referencia_catastral",
+      "description": "Referencia catastral del inmueble transmitido",
+      "rules": [],
+      "examples": ["0012301VK4873F0001QJ"],
+      "text_examples": []
+    },
+    "inmueble_direccion": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección completa del inmueble transmitido",
+      "rules": [],
+      "examples": ["Calle Mayor 12, 1ºA, Murcia"],
+      "text_examples": []
+    },
+    "inmueble_municipio": {
+      "type": "string",
+      "format": "texto",
+      "description": "Municipio donde está ubicado el inmueble",
+      "rules": [],
+      "examples": ["Murcia", "Marbella", "Alicante"],
+      "text_examples": []
+    },
+    "inmueble_provincia": {
+      "type": "string",
+      "format": "texto",
+      "description": "Provincia donde está ubicado el inmueble",
+      "rules": [],
+      "examples": ["Murcia", "Málaga", "Alicante"],
+      "text_examples": []
+    },
+    "inmueble_cp": {
+      "type": "string",
+      "format": "codigo_postal_5_digitos",
+      "description": "Código postal del inmueble",
+      "rules": [],
+      "examples": ["30001", "29600", "03001"],
+      "text_examples": []
+    },
+    "contraprestacion": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Precio de venta del inmueble (contraprestación acordada). Es la base sobre la que se calcula la retención del 3%",
+      "rules": [
+        "Solo el número, sin símbolo de moneda",
+        "En compraventa: el precio pactado",
+        "Si hay varios transmitentes, indicar la parte proporcional al transmitente no residente"
+      ],
+      "examples": ["150000", "250000"],
+      "text_examples": [
+        {"text": "por precio de CIENTO CINCUENTA MIL EUROS (150.000 €)", "value": "150000"}
+      ]
+    },
+    "retencion_3pct": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Importe de la retención practicada (3% de la contraprestación). Calcular si no aparece explícitamente",
+      "rules": [
+        "Retención = contraprestación × 0.03",
+        "Si el precio es 150000, la retención es 4500"
+      ],
+      "examples": ["4500", "7500", "2550"],
+      "text_examples": [
+        {"text": "retención del 3% sobre 150.000 €", "value": "4500"}
+      ]
+    }
+  },
+  "output_format": {
+    "type": "boe",
+    "target": "AEAT Modelo 211",
+    "filename_pattern": "NIF_YYYY_0A.211",
+    "note": "Fichero en formato de diseño de registro AEAT para importación en la aplicación web de la AEAT"
+  }
+}

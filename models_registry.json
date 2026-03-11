@@ -1,0 +1,37 @@
+{
+  "1": {
+    "name": "valencia_600",
+    "label": "Modelo 600 - Comunidad Valenciana",
+    "schema": "pipeline/schemas/valencia_600.schema.json",
+    "exporter": "exporters.valencia_xml",
+    "output_dir": "outputs/valencia_600"
+  },
+  "2": {
+    "name": "murcia_600",
+    "label": "Modelo 600 - Región de Murcia",
+    "schema": "pipeline/schemas/murcia_600.schema.json",
+    "exporter": "exporters.murcia_json",
+    "output_dir": "outputs/murcia_600"
+  },
+  "3": {
+    "name": "andalucia_600",
+    "label": "Modelo 600 - Andalucía",
+    "schema": "pipeline/schemas/andalucia_600.schema.json",
+    "exporter": "exporters.andalucia_xml",
+    "output_dir": "outputs/andalucia_600"
+  },
+  "4": {
+    "name": "aeat_211",
+    "label": "Modelo 211 - AEAT (Retención no residentes)",
+    "schema": "pipeline/schemas/aeat_211.schema.json",
+    "exporter": "exporters.aeat_211_boe",
+    "output_dir": "outputs/aeat_211"
+  },
+  "5": {
+    "name": "aeat_210",
+    "label": "Modelo 210 - AEAT (Incremento patrimonial)",
+    "schema": "pipeline/schemas/aeat_210_incremento.schema.json",
+    "exporter": "exporters.aeat_210_boe",
+    "output_dir": "outputs/aeat_210"
+  }
+}

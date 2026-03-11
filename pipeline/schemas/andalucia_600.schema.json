@@ -1,0 +1,311 @@
+{
+  "document_type": "modelo_600_andalucia",
+  "description": "Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados - Junta de Andalucía",
+  "fields": {
+    "fecha_devengo": {
+      "type": "date",
+      "format": "YYYY-MM-DD",
+      "description": "Fecha en que se produce el hecho imponible (firma de la escritura de compraventa, herencia, donación)",
+      "rules": [
+        "Es la fecha de la escritura notarial",
+        "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'",
+        "Puede aparecer como 'Fecha de escritura' o 'Fecha de otorgamiento'"
+      ],
+      "examples": ["2024-03-12", "2023-11-02"],
+      "text_examples": [
+        {"text": "En Sevilla a 12 de marzo de 2024", "value": "2024-03-12"}
+      ]
+    },
+    "tipo_documento": {
+      "type": "string",
+      "format": "categoria",
+      "description": "Tipo de acto jurídico documentado: compraventa, herencia, donación, disolución de condominio, etc.",
+      "rules": [
+        "Indica el tipo de transmisión patrimonial",
+        "Valores comunes: compraventa, herencia, donación, adjudicación de herencia, disolución de condominio"
+      ],
+      "examples": ["compraventa", "herencia", "donación", "adjudicación de herencia"],
+      "text_examples": [
+        {"text": "ESCRITURA DE COMPRAVENTA", "value": "compraventa"},
+        {"text": "ESCRITURA DE ACEPTACIÓN Y ADJUDICACIÓN DE HERENCIA", "value": "herencia"}
+      ]
+    },
+    "sujeto_pasivo_nif": {
+      "type": "string",
+      "format": "NIF/NIE",
+      "description": "NIF o NIE del sujeto pasivo (comprador, heredero o donatario — quien adquiere el bien)",
+      "rules": [
+        "El sujeto pasivo es quien adquiere el bien inmueble",
+        "En compraventa: el comprador",
+        "En herencia/donación: el heredero o donatario",
+        "Formato NIF: 8 dígitos + letra (ej: 12345678A)",
+        "Formato NIE: X/Y/Z + 7 dígitos + letra (ej: X1234567A)"
+      ],
+      "examples": ["12345678A", "X1234567A", "87654321B"],
+      "text_examples": [
+        {"text": "COMPRADORA: MARÍA GARCÍA LÓPEZ, con DNI 12345678A", "value": "12345678A"}
+      ]
+    },
+    "sujeto_pasivo_apellido1": {
+      "type": "string",
+      "format": "texto",
+      "description": "Primer apellido del sujeto pasivo (comprador/heredero/donatario)",
+      "rules": ["Solo el primer apellido", "En mayúsculas si así aparece en el documento"],
+      "examples": ["GARCÍA", "LÓPEZ", "MARTÍNEZ"],
+      "text_examples": [
+        {"text": "MARÍA GARCÍA LÓPEZ", "value": "GARCÍA"}
+      ]
+    },
+    "sujeto_pasivo_apellido2": {
+      "type": "string",
+      "format": "texto",
+      "description": "Segundo apellido del sujeto pasivo",
+      "rules": ["Solo el segundo apellido"],
+      "examples": ["LÓPEZ", "FERNÁNDEZ", "SÁNCHEZ"],
+      "text_examples": [
+        {"text": "MARÍA GARCÍA LÓPEZ", "value": "LÓPEZ"}
+      ]
+    },
+    "sujeto_pasivo_nombre": {
+      "type": "string",
+      "format": "texto",
+      "description": "Nombre de pila del sujeto pasivo",
+      "rules": ["Solo el nombre, sin apellidos"],
+      "examples": ["MARÍA", "JUAN", "ANA"],
+      "text_examples": [
+        {"text": "MARÍA GARCÍA LÓPEZ", "value": "MARÍA"}
+      ]
+    },
+    "sujeto_pasivo_domicilio": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección fiscal o domicilio del sujeto pasivo",
+      "rules": [
+        "Incluye tipo de vía, nombre, número, piso y puerta si se mencionan",
+        "Puede ser diferente al inmueble transmitido"
+      ],
+      "examples": ["Calle Mayor 14, 3º A", "Avenida de la Constitución 5, bajo"],
+      "text_examples": [
+        {"text": "con domicilio en Calle Mayor 14, 3º A, Sevilla", "value": "Calle Mayor 14, 3º A"}
+      ]
+    },
+    "sujeto_pasivo_municipio": {
+      "type": "string",
+      "format": "texto",
+      "description": "Municipio del domicilio del sujeto pasivo",
+      "rules": [],
+      "examples": ["Sevilla", "Granada", "Málaga"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_provincia": {
+      "type": "string",
+      "format": "texto",
+      "description": "Provincia del domicilio del sujeto pasivo",
+      "rules": [],
+      "examples": ["Sevilla", "Granada", "Málaga", "Cádiz"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_cp": {
+      "type": "string",
+      "format": "codigo_postal_5_digitos",
+      "description": "Código postal del domicilio del sujeto pasivo",
+      "rules": ["5 dígitos", "Empieza por 41 (Sevilla), 18 (Granada), 29 (Málaga), etc."],
+      "examples": ["41001", "18001", "29001"],
+      "text_examples": []
+    },
+    "sujeto_pasivo_porcentaje": {
+      "type": "number",
+      "format": "porcentaje (0-100)",
+      "description": "Porcentaje de participación que adquiere el sujeto pasivo sobre el inmueble",
+      "rules": [
+        "Si hay un solo comprador/heredero, normalmente es 100",
+        "Si hay varios, indicar el correspondiente a este sujeto pasivo"
+      ],
+      "examples": ["100", "50", "33.33"],
+      "text_examples": [
+        {"text": "adquiere el 50% del inmueble", "value": "50"}
+      ]
+    },
+    "transmitente_nif": {
+      "type": "string",
+      "format": "NIF/NIE/CIF",
+      "description": "NIF, NIE o CIF del transmitente (vendedor, causante o donante)",
+      "rules": [
+        "En compraventa: el vendedor",
+        "En herencia: el causante (fallecido) — puede no tener NIF si es extranjero",
+        "En donación: el donante"
+      ],
+      "examples": ["87654321B", "X7654321C"],
+      "text_examples": [
+        {"text": "VENDEDOR: PEDRO MARTÍNEZ RUIZ, DNI 87654321B", "value": "87654321B"}
+      ]
+    },
+    "transmitente_apellido1": {
+      "type": "string",
+      "format": "texto",
+      "description": "Primer apellido del transmitente",
+      "rules": [],
+      "examples": ["MARTÍNEZ", "RUIZ", "GÓMEZ"],
+      "text_examples": []
+    },
+    "transmitente_apellido2": {
+      "type": "string",
+      "format": "texto",
+      "description": "Segundo apellido del transmitente",
+      "rules": [],
+      "examples": ["RUIZ", "SÁNCHEZ", "PÉREZ"],
+      "text_examples": []
+    },
+    "transmitente_nombre": {
+      "type": "string",
+      "format": "texto",
+      "description": "Nombre de pila del transmitente",
+      "rules": [],
+      "examples": ["PEDRO", "ANA", "CARLOS"],
+      "text_examples": []
+    },
+    "transmitente_domicilio": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección del transmitente",
+      "rules": [],
+      "examples": ["Calle Betis 3, 2º B, Sevilla"],
+      "text_examples": []
+    },
+    "notario": {
+      "type": "string",
+      "format": "nombre_completo",
+      "description": "Nombre y apellidos del notario que autoriza la escritura",
+      "rules": [
+        "Puede aparecer como 'Notario de [ciudad]'",
+        "Puede ir precedido de 'ante mí' o 'ante el Notario'"
+      ],
+      "examples": ["Juan García López", "María Fernández Ruiz"],
+      "text_examples": [
+        {"text": "ante mí, JUAN GARCÍA LÓPEZ, Notario de Sevilla", "value": "Juan García López"}
+      ]
+    },
+    "numero_protocolo": {
+      "type": "string",
+      "format": "numero",
+      "description": "Número de protocolo notarial de la escritura",
+      "rules": [
+        "Aparece como 'número de protocolo', 'Protocolo nº', 'nº [número]'",
+        "Es el número que identifica la escritura en el registro del notario"
+      ],
+      "examples": ["1234", "567", "2890"],
+      "text_examples": [
+        {"text": "número de protocolo 1234 del año 2024", "value": "1234"}
+      ]
+    },
+    "ejercicio_protocolo": {
+      "type": "string",
+      "format": "YYYY",
+      "description": "Año del protocolo notarial",
+      "rules": ["Año en 4 dígitos"],
+      "examples": ["2024", "2023"],
+      "text_examples": []
+    },
+    "inmueble_descripcion": {
+      "type": "string",
+      "format": "texto_largo",
+      "description": "Descripción del bien inmueble transmitido tal como aparece en la escritura",
+      "rules": [
+        "Incluye tipo (vivienda, local, garaje, finca rústica, etc.)",
+        "Puede incluir referencia registral y catastral",
+        "Copiar literalmente si es posible"
+      ],
+      "examples": ["Vivienda unifamiliar de 120 m² en planta baja", "Local comercial en planta baja"],
+      "text_examples": []
+    },
+    "inmueble_referencia_catastral": {
+      "type": "string",
+      "format": "referencia_catastral",
+      "description": "Referencia catastral del inmueble (20 caracteres alfanuméricos)",
+      "rules": [
+        "Aparece como 'referencia catastral' o 'ref. catastral'",
+        "20 caracteres alfanuméricos"
+      ],
+      "examples": ["0012301DF3800A0001TK", "7837298VK4873F0001QJ"],
+      "text_examples": []
+    },
+    "inmueble_direccion": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección completa del inmueble transmitido",
+      "rules": [
+        "Puede aparecer después de 'sito en', 'ubicado en', 'situado en'",
+        "Incluye calle, número, piso, municipio y provincia"
+      ],
+      "examples": ["Calle San Fernando 12, 1ºA, Sevilla", "Avenida de Andalucía 45, Málaga"],
+      "text_examples": [
+        {"text": "finca sita en Calle San Fernando 12, 1ºA, Sevilla", "value": "Calle San Fernando 12, 1ºA, Sevilla"}
+      ]
+    },
+    "inmueble_municipio": {
+      "type": "string",
+      "format": "texto",
+      "description": "Municipio donde se ubica el inmueble",
+      "rules": ["Solo el nombre del municipio"],
+      "examples": ["Sevilla", "Málaga", "Granada", "Córdoba"],
+      "text_examples": []
+    },
+    "inmueble_provincia": {
+      "type": "string",
+      "format": "texto",
+      "description": "Provincia donde se ubica el inmueble",
+      "rules": [],
+      "examples": ["Sevilla", "Málaga", "Granada", "Cádiz"],
+      "text_examples": []
+    },
+    "inmueble_cp": {
+      "type": "string",
+      "format": "codigo_postal_5_digitos",
+      "description": "Código postal del inmueble",
+      "rules": [],
+      "examples": ["41001", "29001", "18001"],
+      "text_examples": []
+    },
+    "valor_inmueble": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Valor declarado del inmueble o precio de compraventa",
+      "rules": [
+        "En compraventa: el precio pactado",
+        "En herencia: el valor de tasación o valor de referencia catastral",
+        "Solo el número sin símbolo de moneda ni puntos de miles"
+      ],
+      "examples": ["150000", "250000.50", "85000"],
+      "text_examples": [
+        {"text": "por un precio de CIENTO CINCUENTA MIL EUROS (150.000 €)", "value": "150000"}
+      ]
+    },
+    "porcentaje_transmitido": {
+      "type": "number",
+      "format": "porcentaje (0-100)",
+      "description": "Porcentaje de la propiedad que se transmite",
+      "rules": [
+        "Normalmente 100 si se transmite la totalidad",
+        "Puede ser parcial en casos de proindiviso"
+      ],
+      "examples": ["100", "50", "25"],
+      "text_examples": []
+    },
+    "tipo_gravamen": {
+      "type": "number",
+      "format": "porcentaje",
+      "description": "Tipo impositivo aplicable según el tramo de valor y comunidad autónoma",
+      "rules": [
+        "En Andalucía: escala progresiva según valor (6%, 7%, 8%, 9%, 10%)",
+        "Para herencias/donaciones el tipo varía según parentesco y valor"
+      ],
+      "examples": ["8", "7", "6", "10"],
+      "text_examples": []
+    }
+  },
+  "output_format": {
+    "type": "xml",
+    "target": "Modelo 600 Andalucía - SURWEB",
+    "note": "Los campos se mapean a las casillas del formulario oficial de la Junta de Andalucía"
+  }
+}

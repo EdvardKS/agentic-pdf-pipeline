@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Any
+from typing import TypedDict, List, Any, Dict
 
 # DocumentState define la "forma" del estado que viaja por el grafo.
 # TypedDict sirve para tipado/autocompletado; en runtime sigue siendo un dict.
@@ -30,6 +30,12 @@ class DocumentState(TypedDict):
 
     # Log de resultados extraídos por los nodos
     extraction_log: List[Any]
+
+    # Schema dinámico cargado según el modelo seleccionado
+    schema: Dict[str, Any]
+
+    # Key del modelo fiscal seleccionado ("1"…"5")
+    selected_model: str
     
     
     

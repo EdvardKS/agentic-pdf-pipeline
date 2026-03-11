@@ -1,0 +1,240 @@
+{
+  "document_type": "aeat_modelo_210_incremento_patrimonial",
+  "description": "IRNR - Incremento patrimonial por transmisión de inmueble por no residente - AEAT Modelo 210",
+  "fields": {
+    "ejercicio": {
+      "type": "string",
+      "format": "YYYY",
+      "description": "Año fiscal al que corresponde la declaración (año de la transmisión del inmueble)",
+      "rules": ["Año en 4 dígitos del momento de la transmisión"],
+      "examples": ["2024", "2023"],
+      "text_examples": []
+    },
+    "periodo": {
+      "type": "string",
+      "format": "codigo_periodo",
+      "description": "Período trimestral de la transmisión. 1T=enero-marzo, 2T=abril-junio, 3T=julio-septiembre, 4T=octubre-diciembre",
+      "rules": [
+        "Determinar a partir de la fecha de la escritura",
+        "Enero-Marzo → 1T",
+        "Abril-Junio → 2T",
+        "Julio-Septiembre → 3T",
+        "Octubre-Diciembre → 4T"
+      ],
+      "examples": ["1T", "2T", "3T", "4T"],
+      "text_examples": [
+        {"text": "escritura otorgada el 12 de marzo de 2024", "value": "1T"}
+      ]
+    },
+    "declarante_nif": {
+      "type": "string",
+      "format": "NIE/identificacion_extranjera",
+      "description": "NIE español o identificación fiscal extranjera del no residente que declara la ganancia patrimonial",
+      "rules": [
+        "El declarante es el vendedor no residente",
+        "Si tiene NIE español: X/Y/Z + 7 dígitos + letra",
+        "Si no tiene NIE: número de identificación del país de residencia"
+      ],
+      "examples": ["X7654321C", "FR1234567890", "GB123456789"],
+      "text_examples": []
+    },
+    "declarante_apellido1": {
+      "type": "string",
+      "format": "texto",
+      "description": "Primer apellido o primer componente del nombre del declarante no residente",
+      "rules": [],
+      "examples": ["DUPONT", "SMITH", "MÜLLER"],
+      "text_examples": []
+    },
+    "declarante_apellido2": {
+      "type": "string",
+      "format": "texto",
+      "description": "Segundo apellido del declarante (si lo tiene)",
+      "rules": ["Puede estar vacío"],
+      "examples": ["MARTIN", ""],
+      "text_examples": []
+    },
+    "declarante_nombre": {
+      "type": "string",
+      "format": "texto",
+      "description": "Nombre de pila del declarante no residente",
+      "rules": [],
+      "examples": ["PIERRE", "JOHN", "HANS"],
+      "text_examples": []
+    },
+    "declarante_pais_residencia": {
+      "type": "string",
+      "format": "codigo_pais_ISO_3166_alfa2",
+      "description": "Código de país de residencia fiscal del declarante",
+      "rules": [
+        "Código ISO 3166-1 alfa-2",
+        "FR=Francia, GB=Reino Unido, DE=Alemania, IT=Italia, PT=Portugal"
+      ],
+      "examples": ["FR", "GB", "DE", "IT", "PT"],
+      "text_examples": [
+        {"text": "residente en Francia", "value": "FR"}
+      ]
+    },
+    "declarante_domicilio_pais": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección del declarante en su país de residencia",
+      "rules": [],
+      "examples": ["12 Rue de la Paix, Paris", "10 Downing Street, London"],
+      "text_examples": []
+    },
+    "representante_nif": {
+      "type": "string",
+      "format": "NIF/NIE",
+      "description": "NIF o NIE del representante fiscal en España (si se nombra uno en la escritura o poder notarial)",
+      "rules": ["Puede no existir representante fiscal explícito"],
+      "examples": ["12345678A"],
+      "text_examples": []
+    },
+    "representante_nombre": {
+      "type": "string",
+      "format": "nombre_completo",
+      "description": "Nombre completo del representante fiscal en España",
+      "rules": [],
+      "examples": ["MAM Solicitors SL"],
+      "text_examples": []
+    },
+    "inmueble_referencia_catastral": {
+      "type": "string",
+      "format": "referencia_catastral",
+      "description": "Referencia catastral del inmueble transmitido",
+      "rules": [],
+      "examples": ["0012301VK4873F0001QJ"],
+      "text_examples": []
+    },
+    "inmueble_direccion": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección completa del inmueble transmitido",
+      "rules": [],
+      "examples": ["Calle Mayor 12, 1ºA, Murcia"],
+      "text_examples": []
+    },
+    "inmueble_municipio": {
+      "type": "string",
+      "format": "texto",
+      "description": "Municipio donde está ubicado el inmueble",
+      "rules": [],
+      "examples": ["Murcia", "Marbella", "Alicante"],
+      "text_examples": []
+    },
+    "inmueble_provincia": {
+      "type": "string",
+      "format": "texto",
+      "description": "Provincia donde está ubicado el inmueble",
+      "rules": [],
+      "examples": ["Murcia", "Málaga", "Alicante"],
+      "text_examples": []
+    },
+    "fecha_adquisicion": {
+      "type": "date",
+      "format": "YYYY-MM-DD",
+      "description": "Fecha en que el no residente adquirió el inmueble (fecha de la escritura de compra anterior)",
+      "rules": [
+        "Puede aparecer en el historial registral del inmueble",
+        "O en una referencia a la escritura de compra previa dentro del documento"
+      ],
+      "examples": ["2010-05-20", "2015-07-15"],
+      "text_examples": []
+    },
+    "valor_adquisicion": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Precio que pagó el no residente cuando compró el inmueble (coste de adquisición)",
+      "rules": [
+        "Solo el número, sin símbolo de moneda",
+        "Puede aparecer en la descripción del historial del bien"
+      ],
+      "examples": ["100000", "85000"],
+      "text_examples": []
+    },
+    "fecha_transmision": {
+      "type": "date",
+      "format": "YYYY-MM-DD",
+      "description": "Fecha de la transmisión actual del inmueble (fecha de la escritura de venta)",
+      "rules": ["Fecha de firma de la escritura notarial objeto del documento"],
+      "examples": ["2024-03-12"],
+      "text_examples": []
+    },
+    "valor_transmision": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Precio de venta del inmueble (valor de transmisión)",
+      "rules": ["Solo el número, sin símbolo de moneda"],
+      "examples": ["150000", "200000"],
+      "text_examples": [
+        {"text": "por precio de CIENTO CINCUENTA MIL EUROS (150.000 €)", "value": "150000"}
+      ]
+    },
+    "incremento_patrimonial": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Ganancia o pérdida patrimonial (valor de transmisión menos valor de adquisición). Calcular si no aparece explícitamente",
+      "rules": [
+        "Incremento = valor_transmision - valor_adquisicion",
+        "Si el resultado es negativo, es una pérdida patrimonial"
+      ],
+      "examples": ["50000", "30000", "-5000"],
+      "text_examples": [
+        {"text": "Compró por 100.000 € y vende por 150.000 €", "value": "50000"}
+      ]
+    },
+    "tipo_gravamen_aplicable": {
+      "type": "number",
+      "format": "porcentaje",
+      "description": "Tipo impositivo IRNR aplicable al incremento patrimonial",
+      "rules": [
+        "Residentes UE/EEE: 19%",
+        "Resto de países: 24%",
+        "Determinar según el país de residencia del declarante"
+      ],
+      "examples": ["19", "24"],
+      "text_examples": [
+        {"text": "residente en Francia (UE)", "value": "19"},
+        {"text": "residente en Reino Unido (no UE post-Brexit)", "value": "24"}
+      ]
+    },
+    "cuota_resultante": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Cuota íntegra del impuesto (incremento patrimonial × tipo gravamen). Calcular si no aparece",
+      "rules": ["Cuota = incremento_patrimonial × (tipo_gravamen_aplicable / 100)"],
+      "examples": ["9500", "7200"],
+      "text_examples": []
+    },
+    "retencion_modelo_211": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Importe de la retención ya practicada e ingresada por el comprador mediante el Modelo 211 (3% del precio de venta)",
+      "rules": [
+        "Retención = valor_transmision × 0.03",
+        "Esta cantidad se deduce de la cuota resultante"
+      ],
+      "examples": ["4500", "6000"],
+      "text_examples": []
+    },
+    "cuota_diferencial": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Importe a ingresar o devolver (cuota resultante menos retención del modelo 211)",
+      "rules": [
+        "Cuota diferencial = cuota_resultante - retencion_modelo_211",
+        "Si positivo: el no residente debe pagar la diferencia",
+        "Si negativo: el no residente tiene derecho a devolución"
+      ],
+      "examples": ["5000", "-500", "0"],
+      "text_examples": []
+    }
+  },
+  "output_format": {
+    "type": "boe",
+    "target": "AEAT Modelo 210 - Incremento patrimonial",
+    "filename_pattern": "NIF_YYYY_periodo.210",
+    "note": "Fichero en formato de diseño de registro AEAT. El período es 1T/2T/3T/4T según la fecha de la transmisión."
+  }
+}

@@ -1,7 +1,7 @@
 import json
 import re
 
-from pipeline.schema_loader import build_extraction_prompt, load_schema
+from pipeline.schema_loader import build_extraction_prompt
 from pipeline.ollama_client import client, CHAT_MODEL
 
 
@@ -32,7 +32,7 @@ def validate_extraction(data, required_fields):
     for field in required_fields:
         if field not in data:
             errors.append(f"{field} missing")
-        elif data[field] in [None, "", "null"]:
+        elif data[field] in [None, "null"]:
             errors.append(f"{field} empty")
 
     return errors
@@ -57,20 +57,23 @@ def extract_json_from_response(raw_output: str) -> dict:
 def schema_extract_node(state):
     text = state["clean_text"]
 
-    prompt = build_extraction_prompt(text)
-
-    schema = load_schema()
-    required_fields = list(schema["fields"].keys())
+    # Usar schema dinámico desde el estado; si no viene, usar dict vacío
+    schema = state.get("schema") or {}
+    required_fields = list(schema.get("fields", {}).keys())
 
     print(f"\n{YELLOW}SCHEMA FIELDS:{RESET} {required_fields}")
+
+    prompt = build_extraction_prompt(text, schema)
 
     attempt = 0
     extracted = {}
 
+    # Construir plantilla de corrección con campos reales
+    correction_template_keys = ",\n  ".join([f'"{k}": ""' for k in required_fields])
+    correction_template = "{\n  " + correction_template_keys + "\n}"
+
     while attempt < MAX_RETRIES:
         print(f"\n{CYAN}==================== ATTEMPT {attempt + 1}/{MAX_RETRIES} ===================={RESET}")
-        # print(f"\n{CYAN}PROMPT ENVIADO AL MODELO:{RESET}")
-        # print(prompt)k
 
         stream = client.chat(
             model=CHAT_MODEL,  # type: ignore
@@ -127,14 +130,10 @@ INSTRUCCIONES OBLIGATORIAS:
 5. No uses markdown.
 6. No uses listas con *.
 7. No escribas texto antes ni después del JSON.
-8. No uses null. Si no encuentras un valor exacto, devuelve la mejor aproximación textual del documento.
+8. No uses null. Si no encuentras un valor exacto, devuelve cadena vacía "".
 
 Formato exacto requerido:
-{{
-  "nombre_cliente": "",
-  "fecha_contrato": "",
-  "direccion_inmueble": ""
-}}
+{correction_template}
 
 DOCUMENTO:
 {text}
