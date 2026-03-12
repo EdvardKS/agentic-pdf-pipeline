@@ -13,7 +13,7 @@
     "periodo": {
       "type": "string",
       "format": "0A (periodo único anual)",
-      "description": "Período de declaración del modelo 211. Siempre es 0A (período único)",
+      "description": "Período de declaración del modelo 211. Siempre es 0A (período único anual)",
       "rules": ["Siempre '0A' para el modelo 211"],
       "examples": ["0A"],
       "text_examples": []
@@ -62,10 +62,46 @@
       "examples": ["MARÍA", "Inversiones XYZ SL"],
       "text_examples": []
     },
+    "retenedor_tipo_via": {
+      "type": "string",
+      "format": "texto",
+      "description": "Tipo de vía del domicilio del retenedor (CALLE, AVENIDA, PLAZA, CAMINO...)",
+      "required": false,
+      "rules": [],
+      "examples": ["CALLE", "AVENIDA", "PLAZA", "CAMINO", "CARRETERA"],
+      "text_examples": []
+    },
+    "retenedor_nombre_via": {
+      "type": "string",
+      "format": "texto",
+      "description": "Nombre de la vía del domicilio del retenedor (sin el tipo de vía)",
+      "required": false,
+      "rules": [],
+      "examples": ["MAYOR", "DE LA CONSTITUCIÓN", "JUAN CARLOS I"],
+      "text_examples": []
+    },
+    "retenedor_numero_via": {
+      "type": "string",
+      "format": "texto",
+      "description": "Número del inmueble en la vía del domicilio del retenedor",
+      "required": false,
+      "rules": [],
+      "examples": ["14", "3", "S/N"],
+      "text_examples": []
+    },
+    "retenedor_piso": {
+      "type": "string",
+      "format": "texto",
+      "description": "Piso y puerta del domicilio del retenedor",
+      "required": false,
+      "rules": [],
+      "examples": ["3º A", "BAJO", "1ºB"],
+      "text_examples": []
+    },
     "retenedor_domicilio": {
       "type": "string",
       "format": "direccion_postal",
-      "description": "Domicilio fiscal del retenedor (comprador)",
+      "description": "Domicilio fiscal completo del retenedor (comprador) — calle, número, piso",
       "rules": [],
       "examples": ["Calle Mayor 14, 3ºA, Madrid"],
       "text_examples": []
@@ -101,11 +137,12 @@
       "rules": [
         "El transmitente es el vendedor no residente en España",
         "Si tiene NIE: X/Y/Z + 7 dígitos + letra",
-        "Si no tiene NIE: número de identificación del país de residencia"
+        "Si no tiene NIE: número de identificación del país de residencia (pasaporte u otro)"
       ],
-      "examples": ["X7654321C", "FR1234567890"],
+      "examples": ["X7654321C", "FR1234567890", "124187926"],
       "text_examples": [
-        {"text": "VENDEDOR: PIERRE DUPONT, pasaporte FR1234567890, residente en Francia", "value": "FR1234567890"}
+        {"text": "VENDEDOR: PIERRE DUPONT, pasaporte FR1234567890, residente en Francia", "value": "FR1234567890"},
+        {"text": "NIE Y4351263E, pasaporte número 124187926", "value": "Y4351263E"}
       ]
     },
     "transmitente_nr_apellido1": {
@@ -113,7 +150,7 @@
       "format": "texto",
       "description": "Primer apellido o primer componente del nombre del transmitente no residente",
       "rules": [],
-      "examples": ["DUPONT", "SMITH"],
+      "examples": ["DUPONT", "SMITH", "MOON"],
       "text_examples": []
     },
     "transmitente_nr_apellido2": {
@@ -121,7 +158,7 @@
       "format": "texto",
       "description": "Segundo apellido del transmitente no residente (si lo tiene)",
       "rules": ["Puede estar vacío si el transmitente es de país con un solo apellido"],
-      "examples": ["MARTIN", ""],
+      "examples": ["MARTIN", "ANN", ""],
       "text_examples": []
     },
     "transmitente_nr_nombre": {
@@ -129,7 +166,7 @@
       "format": "texto",
       "description": "Nombre de pila del transmitente no residente",
       "rules": [],
-      "examples": ["PIERRE", "JOHN"],
+      "examples": ["PIERRE", "JOHN", "PHILLIP"],
       "text_examples": []
     },
     "transmitente_nr_pais_residencia": {
@@ -138,19 +175,48 @@
       "description": "Código de país de residencia fiscal del transmitente no residente",
       "rules": [
         "Código ISO 3166-1 alfa-2 de 2 letras",
-        "FR=Francia, GB=Reino Unido, DE=Alemania, IT=Italia, PT=Portugal"
+        "FR=Francia, GB=Reino Unido, DE=Alemania, IT=Italia, PT=Portugal, NL=Países Bajos, IE=Irlanda"
       ],
-      "examples": ["FR", "GB", "DE", "IT", "PT", "US"],
+      "examples": ["FR", "GB", "DE", "IT", "PT", "NL", "IE"],
       "text_examples": [
         {"text": "residente en Francia", "value": "FR"},
-        {"text": "residente en el Reino Unido", "value": "GB"}
+        {"text": "residente en el Reino Unido", "value": "GB"},
+        {"text": "de nacionalidad neerlandesa, residente en Países Bajos", "value": "NL"},
+        {"text": "de nacionalidad irlandesa", "value": "IE"}
       ]
+    },
+    "transmitente_nr_domicilio_pais": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Dirección del transmitente no residente en su país de residencia",
+      "required": false,
+      "rules": ["Copiar la dirección extranjera tal como aparece en la escritura"],
+      "examples": ["21 Grange Park Close Leeds LS25 7JD", "12 Rue de la Paix, 75001 Paris"],
+      "text_examples": []
+    },
+    "transmitente_nr_fecha_nacimiento": {
+      "type": "date",
+      "format": "YYYY-MM-DD",
+      "description": "Fecha de nacimiento del transmitente no residente",
+      "required": false,
+      "rules": ["Solo si aparece explícitamente en el documento", "Puede aparecer como 'nacido el [fecha]'"],
+      "examples": ["1965-04-20", "1948-11-30"],
+      "text_examples": []
+    },
+    "transmitente_nr_lugar_nacimiento": {
+      "type": "string",
+      "format": "texto",
+      "description": "Lugar de nacimiento del transmitente no residente",
+      "required": false,
+      "rules": ["Solo si aparece explícitamente en la escritura"],
+      "examples": ["Leeds (Reino Unido)", "Dublin (Irlanda)", "Amsterdam (Países Bajos)"],
+      "text_examples": []
     },
     "fecha_transmision": {
       "type": "date",
       "format": "YYYY-MM-DD",
       "required": false,
-      "description": "Fecha de la transmisión del inmueble (fecha de la escritura de compraventa). Campo opcional.",
+      "description": "Fecha de la transmisión del inmueble (fecha de la escritura de compraventa).",
       "rules": [
         "Fecha de firma de la escritura notarial",
         "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'",
@@ -167,6 +233,36 @@
       "description": "Referencia catastral del inmueble transmitido",
       "rules": [],
       "examples": ["0012301VK4873F0001QJ"],
+      "text_examples": []
+    },
+    "inmueble_tipo_documento": {
+      "type": "string",
+      "format": "enum",
+      "description": "Tipo de documento que documenta la transmisión del inmueble",
+      "required": false,
+      "rules": [
+        "ESCRITURA_PUBLICA: escritura pública notarial (más habitual)",
+        "DOCUMENTO_PRIVADO: contrato privado"
+      ],
+      "examples": ["ESCRITURA_PUBLICA", "DOCUMENTO_PRIVADO"],
+      "text_examples": []
+    },
+    "inmueble_notario": {
+      "type": "string",
+      "format": "nombre_completo",
+      "description": "Nombre y apellidos del notario que autoriza la escritura",
+      "required": false,
+      "rules": [],
+      "examples": ["Juan García López"],
+      "text_examples": []
+    },
+    "inmueble_numero_protocolo": {
+      "type": "string",
+      "format": "numero",
+      "description": "Número de protocolo notarial de la escritura de transmisión",
+      "required": false,
+      "rules": [],
+      "examples": ["1234", "567"],
       "text_examples": []
     },
     "inmueble_direccion": {
@@ -204,11 +300,11 @@
     "contraprestacion": {
       "type": "number",
       "format": "importe_euros",
-      "description": "Precio de venta del inmueble (contraprestación acordada). Es la base sobre la que se calcula la retención del 3%",
+      "description": "Precio de venta del inmueble (contraprestación acordada). Base sobre la que se calcula la retención del 3%",
       "rules": [
         "Solo el número, sin símbolo de moneda",
         "En compraventa: el precio pactado",
-        "Si hay varios transmitentes, indicar la parte proporcional al transmitente no residente"
+        "Si hay varios transmitentes no residentes, indicar la parte proporcional al transmitente declarado"
       ],
       "examples": ["150000", "250000"],
       "text_examples": [
@@ -230,12 +326,39 @@
       "text_examples": [
         {"text": "retención del 3% sobre 150.000 €", "value": "4500"}
       ]
+    },
+    "liquidacion_ingreso_anterior": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Importe ingresado en una autoliquidación anterior del mismo hecho imponible (para complementarias)",
+      "required": false,
+      "rules": ["Solo para autoliquidaciones complementarias", "Vacío o 0 en declaraciones ordinarias"],
+      "examples": ["0", "3000"],
+      "text_examples": []
+    },
+    "es_complementaria": {
+      "type": "boolean",
+      "format": "true/false",
+      "description": "Indica si esta declaración es complementaria de otra anterior",
+      "required": false,
+      "rules": ["true solo si se menciona explícitamente que es una declaración complementaria"],
+      "examples": ["false", "true"],
+      "text_examples": []
+    },
+    "numero_justificante_anterior": {
+      "type": "string",
+      "format": "numero",
+      "description": "Número de justificante de la autoliquidación anterior (para complementarias)",
+      "required": false,
+      "rules": ["Solo para declaraciones complementarias"],
+      "examples": ["2024G211XXXXXXXXX"],
+      "text_examples": []
     }
   },
   "output_format": {
     "type": "boe",
     "target": "AEAT Modelo 211",
     "filename_pattern": "NIF_YYYY_0A.211",
-    "note": "Fichero en formato de diseño de registro AEAT para importación en la aplicación web de la AEAT"
+    "note": "Fichero en formato de diseño de registro AEAT para importación en la aplicación web de la AEAT. Retención siempre 3% sobre precio de venta."
   }
 }

@@ -5,9 +5,9 @@
     "fecha_devengo": {
       "type": "date",
       "format": "YYYY-MM-DD",
-      "description": "Fecha en que se produce el hecho imponible (firma de la escritura)",
+      "description": "Fecha en que se produce el hecho imponible (firma de la escritura o fecha del documento privado)",
       "rules": [
-        "Es la fecha de la escritura notarial",
+        "Es la fecha de la escritura notarial o del documento privado",
         "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'"
       ],
       "examples": ["2024-03-12", "2023-11-02"],
@@ -15,12 +15,61 @@
         {"text": "En Murcia a 12 de marzo de 2024", "value": "2024-03-12"}
       ]
     },
-    "tipo_documento": {
+    "concepto": {
       "type": "string",
-      "format": "categoria",
-      "description": "Tipo de acto jurídico: compraventa, herencia, donación, disolución de condominio, etc.",
+      "format": "enum",
+      "description": "Modalidad del impuesto: TPO (Transmisiones Patrimoniales Onerosas), AJD (Actos Jurídicos Documentados) u OS (Operaciones Societarias)",
+      "rules": [
+        "TPO: compraventas entre particulares de bienes usados",
+        "AJD: primera transmisión de promotor/empresa, hipotecas, actos notariales",
+        "OS: operaciones societarias (ampliaciones capital, disolución)"
+      ],
+      "examples": ["TPO", "AJD", "OS"],
+      "text_examples": [
+        {"text": "ESCRITURA DE COMPRAVENTA (segunda transmisión)", "value": "TPO"}
+      ]
+    },
+    "tipo_documento_origen": {
+      "type": "string",
+      "format": "enum",
+      "description": "Tipo de documento que origina la liquidación según PACO",
+      "rules": [
+        "NOTARIAL: escritura pública (lo más habitual)",
+        "JUDICIAL: resolución o sentencia judicial",
+        "PRIVADO: contrato privado sin notario",
+        "FUNCIONARIO: documento expedido por funcionario (acto administrativo)"
+      ],
+      "examples": ["NOTARIAL", "JUDICIAL", "PRIVADO", "FUNCIONARIO"],
+      "text_examples": [
+        {"text": "Escritura pública otorgada ante Notario", "value": "NOTARIAL"}
+      ]
+    },
+    "tipo_acto": {
+      "type": "string",
+      "format": "texto",
+      "description": "Tipo de acto jurídico: compraventa, herencia, donación, disolución de condominio, permuta, etc.",
       "rules": [],
-      "examples": ["compraventa", "herencia", "donación"],
+      "examples": ["compraventa", "herencia", "donación", "disolución de condominio"],
+      "text_examples": [
+        {"text": "ESCRITURA DE COMPRAVENTA", "value": "compraventa"}
+      ]
+    },
+    "hecho_imponible_grupo": {
+      "type": "string",
+      "format": "texto",
+      "description": "Grupo del hecho imponible según la clasificación PACO de la Región de Murcia (ej: 'I - Transmisiones Patrimoniales Onerosas')",
+      "required": false,
+      "rules": ["Depende del concepto: TPO, AJD o OS"],
+      "examples": ["I - Transmisiones Patrimoniales Onerosas", "II - Actos Jurídicos Documentados"],
+      "text_examples": []
+    },
+    "hecho_imponible_codigo": {
+      "type": "string",
+      "format": "texto",
+      "description": "Código y denominación del hecho imponible específico dentro del grupo (ej: 'TPO-01 Transmisión de bienes inmuebles')",
+      "required": false,
+      "rules": [],
+      "examples": ["TPO-01 Transmisión de bienes inmuebles", "AJD-01 Primeras copias de escrituras"],
       "text_examples": []
     },
     "sujeto_pasivo_nif": {
@@ -98,10 +147,19 @@
       "examples": ["100", "50"],
       "text_examples": []
     },
+    "sujeto_pasivo_es_presentador": {
+      "type": "boolean",
+      "format": "true/false",
+      "description": "Indica si el sujeto pasivo es también quien presenta la autoliquidación",
+      "required": false,
+      "rules": ["true si la misma persona es sujeto pasivo y presentador"],
+      "examples": ["true", "false"],
+      "text_examples": []
+    },
     "transmitente_nif": {
       "type": "string",
       "format": "NIF/NIE/CIF",
-      "description": "NIF, NIE o CIF del transmitente (vendedor, causante o donante)",
+      "description": "NIF, NIE o CIF del transmitente principal (vendedor, causante o donante)",
       "rules": [],
       "examples": ["87654321B"],
       "text_examples": []
@@ -109,7 +167,7 @@
     "transmitente_apellido1": {
       "type": "string",
       "format": "texto",
-      "description": "Primer apellido del transmitente",
+      "description": "Primer apellido del transmitente principal",
       "rules": [],
       "examples": ["MARTÍNEZ"],
       "text_examples": []
@@ -117,7 +175,7 @@
     "transmitente_apellido2": {
       "type": "string",
       "format": "texto",
-      "description": "Segundo apellido del transmitente",
+      "description": "Segundo apellido del transmitente principal",
       "rules": [],
       "examples": ["RUIZ"],
       "text_examples": []
@@ -125,7 +183,7 @@
     "transmitente_nombre": {
       "type": "string",
       "format": "texto",
-      "description": "Nombre de pila del transmitente",
+      "description": "Nombre de pila del transmitente principal",
       "rules": [],
       "examples": ["PEDRO"],
       "text_examples": []
@@ -133,9 +191,27 @@
     "transmitente_domicilio": {
       "type": "string",
       "format": "direccion_postal",
-      "description": "Dirección del transmitente",
+      "description": "Dirección del transmitente principal",
       "rules": [],
       "examples": ["Calle Alfonso X 3, 2ºB, Murcia"],
+      "text_examples": []
+    },
+    "transmitente_2_nif": {
+      "type": "string",
+      "format": "NIF/NIE/CIF",
+      "description": "NIF/NIE del segundo transmitente si hay más de uno (ej: matrimonio vendedor)",
+      "required": false,
+      "rules": ["Solo si hay un segundo transmitente distinto del primero"],
+      "examples": ["76543210C"],
+      "text_examples": []
+    },
+    "transmitente_2_nombre_completo": {
+      "type": "string",
+      "format": "nombre_completo",
+      "description": "Nombre completo del segundo transmitente (si existe)",
+      "required": false,
+      "rules": [],
+      "examples": ["ANA RODRÍGUEZ PÉREZ"],
       "text_examples": []
     },
     "notario": {
@@ -162,6 +238,17 @@
       "examples": ["2024", "2023"],
       "text_examples": []
     },
+    "inmueble_tipo": {
+      "type": "string",
+      "format": "enum",
+      "description": "Tipo de bien inmueble: URBANO o RUSTICO",
+      "rules": [
+        "URBANO: viviendas, locales, garajes en suelo urbano",
+        "RUSTICO: fincas agrícolas, parcelas rústicas"
+      ],
+      "examples": ["URBANO", "RUSTICO"],
+      "text_examples": []
+    },
     "inmueble_descripcion": {
       "type": "string",
       "format": "texto_largo",
@@ -176,6 +263,15 @@
       "description": "Referencia catastral del inmueble (20 caracteres)",
       "rules": [],
       "examples": ["0012301XH6100A0001TK"],
+      "text_examples": []
+    },
+    "inmueble_valor_catastral": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Valor catastral del inmueble si se menciona en el documento",
+      "required": false,
+      "rules": ["Solo el número, sin símbolo de moneda"],
+      "examples": ["80000", "95000"],
       "text_examples": []
     },
     "inmueble_direccion": {
@@ -210,11 +306,15 @@
       "examples": ["30001", "30710"],
       "text_examples": []
     },
-    "valor_inmueble": {
+    "base_imponible": {
       "type": "number",
       "format": "importe_euros",
-      "description": "Valor declarado del inmueble o precio de compraventa en euros",
-      "rules": ["Solo el número, sin símbolo de moneda ni separadores de miles"],
+      "description": "Base imponible del impuesto — valor real de transmisión o precio de compraventa",
+      "rules": [
+        "En compraventa: el precio pactado",
+        "En herencia: valor de tasación o valor de referencia catastral",
+        "Solo el número sin símbolo de moneda ni separadores de miles"
+      ],
       "examples": ["150000", "250000"],
       "text_examples": [
         {"text": "por precio de CIENTO CINCUENTA MIL EUROS (150.000 €)", "value": "150000"}
@@ -231,15 +331,110 @@
     "tipo_gravamen": {
       "type": "number",
       "format": "porcentaje",
-      "description": "Tipo impositivo aplicable (Región de Murcia: 8% general TPO)",
+      "description": "Tipo impositivo aplicable (Región de Murcia: 8% general TPO; AJD: 1,5%)",
+      "rules": [
+        "TPO general: 8%",
+        "AJD general: 1,5%",
+        "Pueden existir tipos reducidos por VPO, familia numerosa, etc."
+      ],
+      "examples": ["8", "7", "1.5"],
+      "text_examples": []
+    },
+    "cuota_tributaria": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Cuota tributaria resultante (base imponible × tipo gravamen / 100)",
+      "required": false,
+      "calculable": true,
+      "rules": ["Cuota = base_imponible × tipo_gravamen / 100"],
+      "examples": ["12000", "20000"],
+      "text_examples": []
+    },
+    "interes_demora": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Intereses de demora si la presentación es fuera de plazo (más de 30 días hábiles desde el devengo)",
+      "required": false,
+      "rules": ["Solo si la presentación es extemporánea", "Calcular según normativa vigente"],
+      "examples": ["0", "250.50"],
+      "text_examples": []
+    },
+    "cuota_anterior": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Cuota ingresada en autoliquidación anterior (para declaraciones complementarias)",
+      "required": false,
+      "rules": ["Solo para autoliquidaciones complementarias"],
+      "examples": ["0", "5000"],
+      "text_examples": []
+    },
+    "beneficio_fiscal": {
+      "type": "string",
+      "format": "texto",
+      "description": "Descripción del beneficio fiscal aplicado (exención, reducción, bonificación), si procede",
+      "required": false,
       "rules": [],
-      "examples": ["8", "7"],
+      "examples": ["Vivienda habitual familia numerosa", "Exención art. 45.I.B.4"],
+      "text_examples": []
+    },
+    "es_complementaria": {
+      "type": "boolean",
+      "format": "true/false",
+      "description": "Indica si esta declaración es complementaria de otra presentada anteriormente",
+      "required": false,
+      "rules": ["true solo si se menciona que es autoliquidación complementaria"],
+      "examples": ["false", "true"],
+      "text_examples": []
+    },
+    "presentador_nif": {
+      "type": "string",
+      "format": "NIF/NIE/CIF",
+      "description": "NIF/NIE/CIF de quien presenta la autoliquidación (puede ser el sujeto pasivo o un gestor/abogado)",
+      "required": false,
+      "rules": [],
+      "examples": ["12345678A", "B12345678"],
+      "text_examples": []
+    },
+    "presentador_nombre": {
+      "type": "string",
+      "format": "nombre_completo",
+      "description": "Nombre completo o razón social del presentador",
+      "required": false,
+      "rules": [],
+      "examples": ["MAM Solicitors SL", "JUAN PÉREZ GÓMEZ"],
+      "text_examples": []
+    },
+    "presentador_domicilio": {
+      "type": "string",
+      "format": "direccion_postal",
+      "description": "Domicilio del presentador",
+      "required": false,
+      "rules": [],
+      "examples": ["Calle Juan Carlos I, 3, Roldán, Murcia"],
+      "text_examples": []
+    },
+    "presentador_municipio": {
+      "type": "string",
+      "format": "texto",
+      "description": "Municipio del presentador",
+      "required": false,
+      "rules": [],
+      "examples": ["Murcia", "Roldán"],
+      "text_examples": []
+    },
+    "presentador_cp": {
+      "type": "string",
+      "format": "codigo_postal_5_digitos",
+      "description": "Código postal del presentador",
+      "required": false,
+      "rules": [],
+      "examples": ["30001", "30570"],
       "text_examples": []
     }
   },
   "output_format": {
     "type": "json",
     "target": "Modelo 600 Región de Murcia - PACO",
-    "note": "JSON normalizado. Pendiente de adaptar al formato de importación de PACO cuando el cliente facilite la especificación técnica del programa."
+    "note": "JSON normalizado para el programa PACO de la Comunidad Autónoma de la Región de Murcia. Tipo TPO general: 8%. AJD: 1,5%."
   }
 }

@@ -1,13 +1,13 @@
 {
   "document_type": "modelo_600_andalucia",
-  "description": "Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados - Junta de Andalucía",
+  "description": "Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados - Junta de Andalucía (SURWEB)",
   "fields": {
     "fecha_devengo": {
       "type": "date",
       "format": "YYYY-MM-DD",
       "description": "Fecha en que se produce el hecho imponible (firma de la escritura de compraventa, herencia, donación)",
       "rules": [
-        "Es la fecha de la escritura notarial",
+        "Es la fecha de la escritura notarial o del documento privado",
         "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'",
         "Puede aparecer como 'Fecha de escritura' o 'Fecha de otorgamiento'"
       ],
@@ -16,19 +16,72 @@
         {"text": "En Sevilla a 12 de marzo de 2024", "value": "2024-03-12"}
       ]
     },
-    "tipo_documento": {
+    "codigo_territorial": {
       "type": "string",
-      "format": "categoria",
-      "description": "Tipo de acto jurídico documentado: compraventa, herencia, donación, disolución de condominio, etc.",
+      "format": "codigo_provincia_2_digitos",
+      "description": "Código de la provincia andaluza donde radica el inmueble (2 dígitos)",
       "rules": [
-        "Indica el tipo de transmisión patrimonial",
-        "Valores comunes: compraventa, herencia, donación, adjudicación de herencia, disolución de condominio"
+        "04 = Almería, 11 = Cádiz, 14 = Córdoba, 18 = Granada",
+        "21 = Huelva, 23 = Jaén, 29 = Málaga, 41 = Sevilla"
       ],
-      "examples": ["compraventa", "herencia", "donación", "adjudicación de herencia"],
+      "examples": ["41", "29", "18", "04", "11", "14", "21", "23"],
+      "text_examples": [
+        {"text": "Inmueble sito en Sevilla", "value": "41"},
+        {"text": "Inmueble sito en Málaga", "value": "29"}
+      ]
+    },
+    "concepto": {
+      "type": "string",
+      "format": "enum",
+      "description": "Modalidad del impuesto: TPO, AJD u OS",
+      "rules": [
+        "TPO: Transmisiones Patrimoniales Onerosas — compraventas entre particulares de bienes usados",
+        "AJD: Actos Jurídicos Documentados — primera transmisión de promotor, hipotecas, declaraciones obra nueva",
+        "OS: Operaciones Societarias"
+      ],
+      "examples": ["TPO", "AJD", "OS"],
+      "text_examples": [
+        {"text": "ESCRITURA DE COMPRAVENTA (entre particulares, bien usado)", "value": "TPO"}
+      ]
+    },
+    "tipo_acto": {
+      "type": "string",
+      "format": "texto",
+      "description": "Tipo de acto jurídico documentado",
+      "rules": [],
+      "examples": ["compraventa", "herencia", "donación", "adjudicación de herencia", "disolución de condominio"],
       "text_examples": [
         {"text": "ESCRITURA DE COMPRAVENTA", "value": "compraventa"},
         {"text": "ESCRITURA DE ACEPTACIÓN Y ADJUDICACIÓN DE HERENCIA", "value": "herencia"}
       ]
+    },
+    "tipo_documento_origen": {
+      "type": "string",
+      "format": "enum",
+      "description": "Tipo de documento notarial o jurídico que origina la transmisión",
+      "rules": [
+        "ESCRITURA_PUBLICA: escritura notarial (lo más habitual)",
+        "ACTA_NOTARIAL: acta de notoriedad, protocolización, etc.",
+        "DOCUMENTO_PRIVADO: contrato privado sin notario",
+        "RESOLUCION_JUDICIAL: sentencia o auto judicial",
+        "ACTO_ADMINISTRATIVO: resolución de organismo público"
+      ],
+      "examples": ["ESCRITURA_PUBLICA", "ACTA_NOTARIAL", "DOCUMENTO_PRIVADO", "RESOLUCION_JUDICIAL", "ACTO_ADMINISTRATIVO"],
+      "text_examples": [
+        {"text": "Escritura pública otorgada ante Notario", "value": "ESCRITURA_PUBLICA"}
+      ]
+    },
+    "adquisicion_gananciales": {
+      "type": "boolean",
+      "format": "true/false",
+      "description": "Indica si la adquisición se realiza con carácter ganancial (para bienes adquiridos por matrimonio en régimen de gananciales)",
+      "required": false,
+      "rules": [
+        "true si el comprador es un matrimonio en gananciales y adquieren el bien con carácter ganancial",
+        "false en el resto de casos"
+      ],
+      "examples": ["false", "true"],
+      "text_examples": []
     },
     "sujeto_pasivo_nif": {
       "type": "string",
@@ -49,7 +102,7 @@
     "sujeto_pasivo_apellido1": {
       "type": "string",
       "format": "texto",
-      "description": "Primer apellido del sujeto pasivo (comprador/heredero/donatario)",
+      "description": "Primer apellido del sujeto pasivo",
       "rules": ["Solo el primer apellido", "En mayúsculas si así aparece en el documento"],
       "examples": ["GARCÍA", "LÓPEZ", "MARTÍNEZ"],
       "text_examples": [
@@ -79,15 +132,10 @@
     "sujeto_pasivo_domicilio": {
       "type": "string",
       "format": "direccion_postal",
-      "description": "Dirección fiscal o domicilio del sujeto pasivo",
-      "rules": [
-        "Incluye tipo de vía, nombre, número, piso y puerta si se mencionan",
-        "Puede ser diferente al inmueble transmitido"
-      ],
+      "description": "Dirección fiscal o domicilio del sujeto pasivo (tipo de vía + nombre + número + piso)",
+      "rules": ["Incluye tipo de vía, nombre, número, piso y puerta si se mencionan"],
       "examples": ["Calle Mayor 14, 3º A", "Avenida de la Constitución 5, bajo"],
-      "text_examples": [
-        {"text": "con domicilio en Calle Mayor 14, 3º A, Sevilla", "value": "Calle Mayor 14, 3º A"}
-      ]
+      "text_examples": []
     },
     "sujeto_pasivo_municipio": {
       "type": "string",
@@ -109,14 +157,14 @@
       "type": "string",
       "format": "codigo_postal_5_digitos",
       "description": "Código postal del domicilio del sujeto pasivo",
-      "rules": ["5 dígitos", "Empieza por 41 (Sevilla), 18 (Granada), 29 (Málaga), etc."],
+      "rules": ["5 dígitos"],
       "examples": ["41001", "18001", "29001"],
       "text_examples": []
     },
     "sujeto_pasivo_porcentaje": {
       "type": "number",
       "format": "porcentaje (0-100)",
-      "description": "Porcentaje de participación que adquiere el sujeto pasivo sobre el inmueble",
+      "description": "Porcentaje de participación que adquiere este sujeto pasivo sobre el inmueble",
       "rules": [
         "Si hay un solo comprador/heredero, normalmente es 100",
         "Si hay varios, indicar el correspondiente a este sujeto pasivo"
@@ -126,10 +174,19 @@
         {"text": "adquiere el 50% del inmueble", "value": "50"}
       ]
     },
+    "otros_sujetos_pasivos": {
+      "type": "string",
+      "format": "texto",
+      "description": "Relación de otros sujetos pasivos adicionales (NIF y nombre separados por coma) si hay más de un adquirente",
+      "required": false,
+      "rules": ["Formato: 'NIF - Nombre Apellido1 Apellido2 (X%)' por cada persona adicional, separados por ';'"],
+      "examples": ["X1234567B - JOHN SMITH (50%)", "12345678C - ANA RUIZ PÉREZ (33%)"],
+      "text_examples": []
+    },
     "transmitente_nif": {
       "type": "string",
       "format": "NIF/NIE/CIF",
-      "description": "NIF, NIE o CIF del transmitente (vendedor, causante o donante)",
+      "description": "NIF, NIE o CIF del transmitente principal (vendedor, causante o donante)",
       "rules": [
         "En compraventa: el vendedor",
         "En herencia: el causante (fallecido) — puede no tener NIF si es extranjero",
@@ -172,6 +229,15 @@
       "examples": ["Calle Betis 3, 2º B, Sevilla"],
       "text_examples": []
     },
+    "otros_transmitentes": {
+      "type": "string",
+      "format": "texto",
+      "description": "Relación de otros transmitentes si hay más de uno (ej: varios vendedores o herederos que transmiten)",
+      "required": false,
+      "rules": ["Formato: 'NIF - Nombre completo (X%)' por cada transmitente adicional, separados por ';'"],
+      "examples": ["Y4351263E - PHILLIP MOON (50%); Y4351371S - SUSAN MOON (50%)"],
+      "text_examples": []
+    },
     "notario": {
       "type": "string",
       "format": "nombre_completo",
@@ -206,12 +272,27 @@
       "examples": ["2024", "2023"],
       "text_examples": []
     },
+    "inmueble_tipo": {
+      "type": "string",
+      "format": "enum",
+      "description": "Tipo de bien inmueble: VIVIENDA, LOCAL, GARAJE, TRASTERO, FINCA_RUSTICA u OTRO",
+      "rules": [
+        "VIVIENDA: casa, piso, apartamento, chalet",
+        "LOCAL: local comercial, oficina",
+        "GARAJE: plaza de garaje",
+        "TRASTERO: trastero o almacén",
+        "FINCA_RUSTICA: terreno agrícola, finca rústica",
+        "OTRO: resto de casos"
+      ],
+      "examples": ["VIVIENDA", "LOCAL", "GARAJE", "TRASTERO", "FINCA_RUSTICA", "OTRO"],
+      "text_examples": []
+    },
     "inmueble_descripcion": {
       "type": "string",
       "format": "texto_largo",
       "description": "Descripción del bien inmueble transmitido tal como aparece en la escritura",
       "rules": [
-        "Incluye tipo (vivienda, local, garaje, finca rústica, etc.)",
+        "Incluye tipo (vivienda, local, garaje, etc.)",
         "Puede incluir referencia registral y catastral",
         "Copiar literalmente si es posible"
       ],
@@ -227,6 +308,15 @@
         "20 caracteres alfanuméricos"
       ],
       "examples": ["0012301DF3800A0001TK", "7837298VK4873F0001QJ"],
+      "text_examples": []
+    },
+    "inmueble_valor_catastral": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Valor catastral del inmueble si se menciona en el documento",
+      "required": false,
+      "rules": ["Solo el número, sin símbolo de moneda"],
+      "examples": ["100000", "150000"],
       "text_examples": []
     },
     "inmueble_direccion": {
@@ -253,7 +343,7 @@
     "inmueble_provincia": {
       "type": "string",
       "format": "texto",
-      "description": "Provincia donde se ubica el inmueble",
+      "description": "Provincia donde se ubica el inmueble (siempre una provincia andaluza)",
       "rules": [],
       "examples": ["Sevilla", "Málaga", "Granada", "Cádiz"],
       "text_examples": []
@@ -266,10 +356,10 @@
       "examples": ["41001", "29001", "18001"],
       "text_examples": []
     },
-    "valor_inmueble": {
+    "base_imponible": {
       "type": "number",
       "format": "importe_euros",
-      "description": "Valor declarado del inmueble o precio de compraventa",
+      "description": "Base imponible del impuesto — valor real del inmueble o precio de compraventa",
       "rules": [
         "En compraventa: el precio pactado",
         "En herencia: el valor de tasación o valor de referencia catastral",
@@ -294,18 +384,66 @@
     "tipo_gravamen": {
       "type": "number",
       "format": "porcentaje",
-      "description": "Tipo impositivo aplicable según el tramo de valor y comunidad autónoma",
+      "description": "Tipo impositivo aplicable según escala andaluza y tipo de operación",
       "rules": [
-        "En Andalucía: escala progresiva según valor (6%, 7%, 8%, 9%, 10%)",
-        "Para herencias/donaciones el tipo varía según parentesco y valor"
+        "TPO escala general Andalucía: 8% hasta 400.000 €, 9% entre 400.000 y 700.000 €, 10% más de 700.000 €",
+        "AJD general: 1,2%",
+        "Pueden aplicar tipos reducidos por familia numerosa, VPO, jóvenes, discapacitados, etc."
       ],
-      "examples": ["8", "7", "6", "10"],
+      "examples": ["8", "9", "10", "1.2"],
+      "text_examples": []
+    },
+    "cuota_tributaria": {
+      "type": "number",
+      "format": "importe_euros",
+      "description": "Cuota tributaria resultante (base imponible × tipo gravamen / 100)",
+      "required": false,
+      "calculable": true,
+      "rules": ["Cuota = base_imponible × porcentaje_transmitido/100 × tipo_gravamen/100"],
+      "examples": ["12000", "20000"],
+      "text_examples": []
+    },
+    "motivo_no_ingreso": {
+      "type": "string",
+      "format": "enum",
+      "description": "Motivo por el que no se ingresa cuota (vacío si hay cuota a ingresar)",
+      "required": false,
+      "rules": [
+        "Vacío si hay cuota a ingresar normalmente",
+        "EXENTO: la operación está exenta del impuesto",
+        "NO_SUJETO: no está sujeta al ITP y AJD (ej: sujeta a IVA)",
+        "PRESCRIPCION: han transcurrido más de 4 años",
+        "APLAZAMIENTO: se solicita aplazamiento de pago"
+      ],
+      "examples": ["", "EXENTO", "NO_SUJETO", "PRESCRIPCION"],
+      "text_examples": []
+    },
+    "tipo_declaracion_complementaria": {
+      "type": "string",
+      "format": "enum",
+      "description": "Indica si es una declaración complementaria y el motivo",
+      "required": false,
+      "rules": [
+        "Vacío si es declaración ordinaria (primera presentación)",
+        "COMPLEMENTARIA_ORDINARIA: por omisión o error en declaración anterior",
+        "COMPLEMENTARIA_COMPROBACION: tras comprobación de la Administración"
+      ],
+      "examples": ["", "COMPLEMENTARIA_ORDINARIA", "COMPLEMENTARIA_COMPROBACION"],
+      "text_examples": []
+    },
+    "remision_registro": {
+      "type": "boolean",
+      "format": "true/false",
+      "description": "Indica si se autoriza la remisión al Registro de la Propiedad una vez presentada y pagada la autoliquidación",
+      "required": false,
+      "rules": ["Normalmente true cuando el notario o gestor se encarga de la inscripción registral"],
+      "examples": ["true", "false"],
       "text_examples": []
     }
   },
   "output_format": {
     "type": "xml",
-    "target": "Modelo 600 Andalucía - SURWEB",
-    "note": "Los campos se mapean a las casillas del formulario oficial de la Junta de Andalucía"
+    "target": "Modelo 600 Andalucía - SURWEB / Junta de Andalucía",
+    "note": "Los campos se mapean a las casillas del formulario oficial SURWEB de la Junta de Andalucía. Tipos TPO: escala 8/9/10%. AJD: 1,2%."
   }
 }
