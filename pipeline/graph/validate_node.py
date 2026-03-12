@@ -87,7 +87,10 @@ def validate_node(state: dict) -> dict:
         field_def = fields_def.get(field_name, {})
         field_type = field_def.get("type", "string")
 
-        if field_type == "number":
+        if field_type in ("array",):
+            # Preservar arrays tal como vienen del LLM
+            validated[field_name] = raw_value if isinstance(raw_value, list) else ([] if raw_value is None else raw_value)
+        elif field_type in ("number", "integer"):
             validated[field_name] = parse_number(raw_value)
         elif field_type == "date":
             validated[field_name] = normalize_date(str(raw_value) if raw_value else "")
@@ -195,35 +198,36 @@ def _compute_derived(data: dict, model_name: str) -> None:
             data["cuota_diferencial"] = cuota_dif
             print(f"  {YELLOW}[derivado] cuota_diferencial calculada: {cuota_dif}{RESET}")
 
-        # Período trimestral
-        if not data.get("periodo") and data.get("fecha_transmision"):
+        # Periodo siempre 0A para modelo 210 (incremento patrimonial es anual)
+        if not data.get("periodo"):
+            data["periodo"] = "0A"
+            print(f"  {YELLOW}[derivado] periodo=0A (incremento patrimonial: período anual){RESET}")
+
+        # Ejercicio desde fecha_transmision si no está
+        if not data.get("ejercicio") and data.get("fecha_transmision"):
             fecha = normalize_date(data["fecha_transmision"])
             if validate_date(fecha):
                 data["fecha_transmision"] = fecha
-                data["periodo"] = periodo_trimestral(fecha)
                 data["ejercicio"] = fecha[:4]
-                print(f"  {YELLOW}[derivado] periodo={data['periodo']}, ejercicio={data['ejercicio']}{RESET}")
+                print(f"  {YELLOW}[derivado] ejercicio={data['ejercicio']}{RESET}")
 
     # --- Modelos 600 autonómicos ---
     else:
-        valor = parse_number(data.get("valor_inmueble", 0))
-        if valor:
-            data["valor_inmueble"] = valor
-
-        pct = parse_number(data.get("porcentaje_transmitido", 100))
-        if not pct:
-            pct = 100.0
-        data["porcentaje_transmitido"] = pct
-
+        # Los nuevos schemas usan base_imponible directamente (extraída del documento)
+        # Compatibilidad: si hubiera valor_inmueble del schema antiguo, usarlo como fallback
+        base = parse_number(data.get("base_imponible") or data.get("valor_inmueble") or 0)
+        pct = parse_number(data.get("porcentaje_transmitido", 0)) or 100.0
         tipo = parse_number(data.get("tipo_gravamen", 0))
-        base = round(valor * pct / 100, 2) if valor else 0
-        if base and not data.get("base_imponible"):
-            data["base_imponible"] = base
 
-        if base and tipo and not data.get("cuota_tributaria"):
-            cuota = round(base * tipo / 100, 2)
-            data["cuota_tributaria"] = cuota
-            print(f"  {YELLOW}[derivado] cuota_tributaria calculada: {cuota}{RESET}")
+        if base:
+            # Aplicar porcentaje solo si no es 100% (ajuste del proindiviso)
+            base_ajustada = round(base * pct / 100, 2) if pct != 100.0 else base
+            data["base_imponible"] = base_ajustada
+
+            if tipo and not parse_number(data.get("cuota_tributaria", 0)):
+                cuota = round(base_ajustada * tipo / 100, 2)
+                data["cuota_tributaria"] = cuota
+                print(f"  {YELLOW}[derivado] cuota_tributaria calculada: {cuota}{RESET}")
 
     # Normalizar fecha_devengo / fecha_transmision si presentes
     for campo_fecha in ["fecha_devengo", "fecha_transmision", "fecha_adquisicion"]:

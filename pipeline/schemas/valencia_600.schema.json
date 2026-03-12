@@ -1,77 +1,130 @@
 {
   "document_type": "modelo_600_valencia",
-  "description": "Impuesto sobre Transmisiones Patrimoniales y Actos Jurídicos Documentados - Comunitat Valenciana (ATV / SARA2600)",
+  "description": "Schema corregido para extracción del Modelo 600 de la Comunitat Valenciana.",
+  "extraction_policy": {
+    "null_if_missing": true,
+    "do_not_infer_unknown_values": true,
+    "do_not_calculate_tax_fields_without_source": true,
+    "normalize_dates_to": "YYYY-MM-DD",
+    "for_legal_entities": "usar razon_social en *_nombre y dejar *_apellido1/*_apellido2 a null"
+  },
   "fields": {
     "fecha_devengo": {
       "type": "date",
+      "required": true,
       "format": "YYYY-MM-DD",
-      "description": "Fecha en que se produce el hecho imponible (firma de la escritura o fecha del documento privado)",
+      "description": "Fecha del devengo del impuesto.",
       "rules": [
         "Es la fecha de la escritura notarial o del documento privado",
-        "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'",
-        "Puede aparecer en la antefirma o en el encabezado de la escritura"
+        "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'"
       ],
-      "examples": ["2024-03-12", "2023-11-02"],
+      "examples": ["2024-03-12", "2026-03-02"],
       "text_examples": [
-        {"text": "En Valencia a 12 de marzo de 2024", "value": "2024-03-12"},
-        {"text": "En Alicante a 2 de marzo de 2026", "value": "2026-03-02"}
+        {"text": "En Valencia a 12 de marzo de 2024", "value": "2024-03-12"}
       ]
     },
     "concepto": {
       "type": "string",
+      "required": true,
       "format": "enum",
-      "description": "Modalidad del impuesto: TPO (Transmisiones Patrimoniales Onerosas), AJD (Actos Jurídicos Documentados) u OS (Operaciones Societarias)",
+      "options": ["0001_TRANS_PATRIMONIALES", "0002_ACTOS_JURIDICOS_DOCUMENTADOS", "0003_OPERACIONES_SOCIETARIAS"],
+      "description": "Concepto oficial del formulario valenciano.",
       "rules": [
-        "TPO: compraventas entre particulares, arrendamientos, transmisión de bienes usados",
-        "AJD: escrituras notariales de primera transmisión (promotor/empresa a particular), hipotecas, declaraciones de obra nueva",
-        "OS: ampliaciones de capital, disolución de sociedades",
-        "La mayoría de compraventas entre particulares de inmuebles usados son TPO"
+        "0001_TRANS_PATRIMONIALES: compraventas entre particulares de bienes usados",
+        "0002_ACTOS_JURIDICOS_DOCUMENTADOS: primera transmisión de promotor, hipotecas, obras nuevas",
+        "0003_OPERACIONES_SOCIETARIAS: ampliaciones o disoluciones de sociedades"
       ],
-      "examples": ["TPO", "AJD", "OS"],
+      "examples": ["0001_TRANS_PATRIMONIALES", "0002_ACTOS_JURIDICOS_DOCUMENTADOS"],
       "text_examples": [
-        {"text": "ESCRITURA DE COMPRAVENTA (particular a particular)", "value": "TPO"},
-        {"text": "ESCRITURA DE DECLARACIÓN DE OBRA NUEVA", "value": "AJD"}
+        {"text": "ESCRITURA DE COMPRAVENTA (entre particulares)", "value": "0001_TRANS_PATRIMONIALES"}
       ]
+    },
+    "organo_gestor": {
+      "type": "string",
+      "required": false,
+      "format": "codigo_y_descripcion",
+      "description": "Órgano gestor u oficina liquidadora, por ejemplo 'EH4654 - O.L. ALGEMESI'.",
+      "rules": ["Solo si aparece expresamente en el documento"],
+      "examples": ["EH4654 - O.L. ALGEMESI"],
+      "text_examples": []
     },
     "tipo_acto": {
       "type": "string",
-      "format": "texto",
-      "description": "Tipo de acto jurídico: compraventa, herencia, donación, disolución de condominio, permuta, etc.",
-      "rules": [
-        "Compraventa: el acto más habitual",
-        "Herencia / adjudicación de herencia: cuando hay fallecimiento",
-        "Donación: transmisión gratuita",
-        "Disolución de condominio: extinción de proindiviso"
-      ],
-      "examples": ["compraventa", "herencia", "donación", "adjudicación de herencia", "disolución de condominio", "permuta"],
+      "required": false,
+      "format": "enum",
+      "options": ["COMPRAVENTA", "HERENCIA", "DONACION", "DISOLUCION_CONDOMINIO", "HIPOTECA", "OBRA_NUEVA", "OTRO"],
+      "description": "Clasificación material interna del negocio.",
+      "rules": [],
+      "examples": ["COMPRAVENTA", "HERENCIA"],
       "text_examples": [
-        {"text": "ESCRITURA DE COMPRAVENTA", "value": "compraventa"},
-        {"text": "ESCRITURA DE ACEPTACIÓN Y ADJUDICACIÓN DE HERENCIA", "value": "herencia"}
+        {"text": "ESCRITURA DE COMPRAVENTA", "value": "COMPRAVENTA"},
+        {"text": "ESCRITURA DE ACEPTACIÓN Y ADJUDICACIÓN DE HERENCIA", "value": "HERENCIA"}
       ]
     },
     "tipo_documento_origen": {
       "type": "string",
+      "required": true,
       "format": "enum",
-      "description": "Tipo de documento que origina la transmisión",
+      "options": ["NOTARIAL", "JUDICIAL", "PRIVADO", "OTRO"],
+      "description": "Tipo de documento según el desplegable oficial del formulario ATV.",
       "rules": [
-        "ESCRITURA_PUBLICA: documento notarial (lo más habitual)",
-        "DOCUMENTO_PRIVADO: contrato privado sin notario",
-        "RESOLUCION_JUDICIAL: sentencia, auto o resolución judicial",
-        "ACTO_ADMINISTRATIVO: resolución administrativa"
+        "NOTARIAL: escritura pública (lo más habitual)",
+        "JUDICIAL: sentencia o resolución judicial",
+        "PRIVADO: contrato privado sin notario",
+        "OTRO: resto de casos"
       ],
-      "examples": ["ESCRITURA_PUBLICA", "DOCUMENTO_PRIVADO", "RESOLUCION_JUDICIAL"],
+      "examples": ["NOTARIAL", "PRIVADO"],
       "text_examples": [
-        {"text": "ESCRITURA PÚBLICA otorgada ante Notario", "value": "ESCRITURA_PUBLICA"}
+        {"text": "Escritura pública otorgada ante Notario", "value": "NOTARIAL"}
       ]
+    },
+    "notario": {
+      "type": "string",
+      "required": false,
+      "description": "Nombre y apellidos del notario autorizante. Solo si el documento es notarial.",
+      "rules": ["Puede ir precedido de 'ante mí' o 'ante el Notario de'"],
+      "examples": ["Juan García López"],
+      "text_examples": []
+    },
+    "notario_poblacion": {
+      "type": "string",
+      "required": false,
+      "description": "Población o residencia del notario.",
+      "rules": ["Aparece como 'Notario de [ciudad]' o 'con residencia en [ciudad]'"],
+      "examples": ["Valencia", "Alicante"],
+      "text_examples": []
+    },
+    "numero_protocolo": {
+      "type": "string",
+      "required": false,
+      "description": "Número de protocolo del documento notarial.",
+      "rules": [],
+      "examples": ["1234", "567"],
+      "text_examples": []
+    },
+    "numero_protocolo_bis": {
+      "type": "string",
+      "required": false,
+      "description": "Número o sufijo de protocolo bis, si existe.",
+      "rules": ["Solo si aparece un segundo número de protocolo o sufijo 'bis'"],
+      "examples": [],
+      "text_examples": []
+    },
+    "ejercicio_protocolo": {
+      "type": "string",
+      "required": false,
+      "format": "YYYY",
+      "description": "Año del protocolo notarial.",
+      "rules": [],
+      "examples": ["2024", "2023"],
+      "text_examples": []
     },
     "sujeto_pasivo_nif": {
       "type": "string",
-      "format": "NIF/NIE",
-      "description": "NIF o NIE del sujeto pasivo (quien adquiere: comprador, heredero o donatario)",
+      "required": true,
+      "format": "NIF_NIE_CIF",
+      "description": "NIF/NIE/CIF del sujeto pasivo principal (comprador, heredero o donatario).",
       "rules": [
-        "El sujeto pasivo es quien adquiere el bien inmueble",
-        "En compraventa: el comprador",
-        "En herencia/donación: el heredero o donatario",
         "Formato NIF: 8 dígitos + letra",
         "Formato NIE: X/Y/Z + 7 dígitos + letra"
       ],
@@ -82,219 +135,191 @@
     },
     "sujeto_pasivo_apellido1": {
       "type": "string",
-      "format": "texto",
-      "description": "Primer apellido del sujeto pasivo",
+      "required": false,
+      "description": "Primer apellido del sujeto pasivo si es persona física.",
       "rules": [],
       "examples": ["GARCÍA", "MARTÍNEZ"],
       "text_examples": []
     },
     "sujeto_pasivo_apellido2": {
       "type": "string",
-      "format": "texto",
-      "description": "Segundo apellido del sujeto pasivo",
+      "required": false,
+      "description": "Segundo apellido del sujeto pasivo si es persona física.",
       "rules": [],
       "examples": ["LÓPEZ", "FERNÁNDEZ"],
       "text_examples": []
     },
     "sujeto_pasivo_nombre": {
       "type": "string",
-      "format": "texto",
-      "description": "Nombre de pila del sujeto pasivo",
+      "required": true,
+      "description": "Nombre del sujeto pasivo o razón social si es persona jurídica.",
       "rules": [],
-      "examples": ["MARÍA", "JUAN"],
+      "examples": ["MARÍA", "JUAN", "Inversiones XYZ SL"],
       "text_examples": []
     },
     "sujeto_pasivo_domicilio": {
       "type": "string",
+      "required": false,
       "format": "direccion_postal",
-      "description": "Domicilio fiscal del sujeto pasivo (calle, número, piso)",
+      "description": "Domicilio del sujeto pasivo.",
       "rules": [],
       "examples": ["Calle Colón 14, 3º A"],
       "text_examples": []
     },
     "sujeto_pasivo_municipio": {
       "type": "string",
-      "format": "texto",
-      "description": "Municipio del domicilio del sujeto pasivo",
+      "required": false,
+      "description": "Municipio del sujeto pasivo.",
       "rules": [],
-      "examples": ["Valencia", "Alicante", "Castellón"],
+      "examples": ["Valencia", "Alicante"],
       "text_examples": []
     },
     "sujeto_pasivo_provincia": {
       "type": "string",
-      "format": "texto",
-      "description": "Provincia del domicilio del sujeto pasivo",
+      "required": false,
+      "description": "Provincia del sujeto pasivo.",
       "rules": [],
-      "examples": ["Valencia", "Alicante", "Castellón"],
+      "examples": ["Valencia", "Alicante"],
       "text_examples": []
     },
     "sujeto_pasivo_cp": {
       "type": "string",
-      "format": "codigo_postal_5_digitos",
-      "description": "Código postal del domicilio del sujeto pasivo",
+      "required": false,
+      "format": "codigo_postal",
+      "description": "Código postal del sujeto pasivo.",
       "rules": [],
-      "examples": ["46001", "03001", "12001"],
+      "examples": ["46001", "03001"],
       "text_examples": []
     },
     "sujeto_pasivo_porcentaje": {
       "type": "number",
-      "format": "porcentaje (0-100)",
-      "description": "Porcentaje de participación adquirido por este sujeto pasivo",
-      "rules": ["Normalmente 100 si es el único adquirente", "50 si son dos compradores a partes iguales"],
+      "required": false,
+      "format": "porcentaje_0_100",
+      "description": "Porcentaje adquirido por el sujeto pasivo principal.",
+      "rules": ["Normalmente 100 si es el único adquirente"],
       "examples": ["100", "50"],
       "text_examples": []
     },
     "transmitente_nif": {
       "type": "string",
-      "format": "NIF/NIE/CIF",
-      "description": "NIF, NIE o CIF del transmitente (vendedor, causante o donante)",
-      "rules": [
-        "En compraventa: el vendedor",
-        "En herencia: el causante (fallecido)"
-      ],
+      "required": false,
+      "format": "NIF_NIE_CIF",
+      "description": "NIF/NIE/CIF del transmitente principal (vendedor, causante o donante).",
+      "rules": [],
       "examples": ["87654321B"],
       "text_examples": []
     },
     "transmitente_apellido1": {
       "type": "string",
-      "format": "texto",
-      "description": "Primer apellido del transmitente",
+      "required": false,
+      "description": "Primer apellido del transmitente si es persona física.",
       "rules": [],
       "examples": ["MARTÍNEZ"],
       "text_examples": []
     },
     "transmitente_apellido2": {
       "type": "string",
-      "format": "texto",
-      "description": "Segundo apellido del transmitente",
+      "required": false,
+      "description": "Segundo apellido del transmitente si es persona física.",
       "rules": [],
       "examples": ["RUIZ"],
       "text_examples": []
     },
     "transmitente_nombre": {
       "type": "string",
-      "format": "texto",
-      "description": "Nombre de pila del transmitente",
+      "required": false,
+      "description": "Nombre del transmitente o razón social si es persona jurídica.",
       "rules": [],
       "examples": ["PEDRO"],
       "text_examples": []
     },
     "transmitente_domicilio": {
       "type": "string",
+      "required": false,
       "format": "direccion_postal",
-      "description": "Dirección del transmitente",
+      "description": "Domicilio del transmitente principal.",
       "rules": [],
       "examples": ["Calle Paz 3, 2º B, Valencia"],
       "text_examples": []
     },
-    "notario": {
-      "type": "string",
-      "format": "nombre_completo",
-      "description": "Nombre y apellidos del notario autorizante",
-      "rules": ["Puede ir precedido de 'ante mí' o 'ante el Notario de'"],
-      "examples": ["Juan García López"],
-      "text_examples": []
-    },
-    "notario_poblacion": {
-      "type": "string",
-      "format": "texto",
-      "description": "Localidad en la que el notario tiene su despacho / notaría",
-      "rules": ["Aparece como 'Notario de [ciudad]' o 'con residencia en [ciudad]'"],
-      "examples": ["Valencia", "Alicante", "Torrevieja"],
-      "text_examples": []
-    },
-    "numero_protocolo": {
-      "type": "string",
-      "format": "numero",
-      "description": "Número de protocolo notarial",
-      "rules": [],
-      "examples": ["1234", "567"],
-      "text_examples": []
-    },
-    "ejercicio_protocolo": {
-      "type": "string",
-      "format": "YYYY",
-      "description": "Año del protocolo notarial",
-      "rules": [],
-      "examples": ["2024", "2023"],
-      "text_examples": []
-    },
     "inmueble_tipo": {
       "type": "string",
+      "required": false,
       "format": "enum",
-      "description": "Tipo de bien: URBANO (vivienda, local, garaje en ciudad) o RUSTICO (finca agrícola, terreno rústico)",
-      "rules": [
-        "URBANO: la mayoría de viviendas, locales comerciales, garajes en ciudad",
-        "RUSTICO: fincas agrícolas, terrenos sin urbanizar, parcelas rústicas"
-      ],
+      "options": ["URBANO", "RUSTICO", "GARAJE", "TRASTERO", "LOCAL", "SOLAR", "OTRO"],
+      "description": "Tipo del bien principal.",
+      "rules": [],
       "examples": ["URBANO", "RUSTICO"],
       "text_examples": []
     },
     "inmueble_descripcion": {
       "type": "string",
-      "format": "texto_largo",
-      "description": "Descripción del bien inmueble transmitido tal como aparece en la escritura",
-      "rules": ["Incluye tipo (vivienda, local, garaje), superficie, planta, referencia registral si aparece"],
+      "required": false,
+      "description": "Descripción libre del bien principal.",
+      "rules": ["Incluye tipo, superficie, planta, referencia registral si aparece"],
       "examples": ["Vivienda unifamiliar de 120 m²"],
       "text_examples": []
     },
     "inmueble_referencia_catastral": {
       "type": "string",
+      "required": false,
       "format": "referencia_catastral",
-      "description": "Referencia catastral del inmueble (20 caracteres alfanuméricos)",
-      "rules": ["Aparece como 'referencia catastral' o 'ref. catastral', 20 caracteres"],
+      "description": "Referencia catastral del bien principal (20 caracteres alfanuméricos).",
+      "rules": [],
       "examples": ["0012301YJ2701A0001TK"],
       "text_examples": []
     },
     "inmueble_valor_catastral": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Valor catastral del inmueble (si se menciona en la escritura o en alguna referencia catastral adjunta)",
       "required": false,
+      "format": "importe_eur",
+      "description": "Valor catastral si aparece expresamente en el documento.",
       "rules": ["Solo el número, sin símbolo de moneda"],
       "examples": ["80000", "120000"],
       "text_examples": []
     },
     "inmueble_direccion": {
       "type": "string",
+      "required": true,
       "format": "direccion_postal",
-      "description": "Dirección completa del inmueble transmitido",
+      "description": "Dirección del inmueble principal.",
       "rules": ["Puede aparecer después de 'sito en', 'ubicado en', 'situado en'"],
       "examples": ["Calle Colón 12, 1ºA, Valencia"],
       "text_examples": []
     },
     "inmueble_municipio": {
       "type": "string",
-      "format": "texto",
-      "description": "Municipio donde se ubica el inmueble",
+      "required": true,
+      "description": "Municipio del inmueble principal.",
       "rules": [],
       "examples": ["Valencia", "Alicante", "Benidorm"],
       "text_examples": []
     },
     "inmueble_provincia": {
       "type": "string",
-      "format": "texto",
-      "description": "Provincia donde se ubica el inmueble (siempre dentro de la Comunitat Valenciana)",
+      "required": false,
+      "description": "Provincia del inmueble principal.",
       "rules": [],
       "examples": ["Valencia", "Alicante", "Castellón"],
       "text_examples": []
     },
     "inmueble_cp": {
       "type": "string",
-      "format": "codigo_postal_5_digitos",
-      "description": "Código postal del inmueble",
+      "required": false,
+      "format": "codigo_postal",
+      "description": "Código postal del inmueble principal.",
       "rules": [],
       "examples": ["46001", "03001"],
       "text_examples": []
     },
     "base_imponible": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Base imponible del impuesto — valor real del inmueble o precio de compraventa declarado",
+      "required": false,
+      "format": "importe_eur",
+      "description": "Base imponible declarada. Extraer solo si consta expresamente en el documento.",
       "rules": [
-        "En compraventa entre particulares: el precio pactado (escritura)",
-        "El valor de referencia catastral puede actuar como valor mínimo",
-        "Solo el número sin símbolo de moneda ni separadores de miles"
+        "En compraventa: el precio pactado",
+        "NO calcular ni inferir si no aparece explícitamente"
       ],
       "examples": ["150000", "250000"],
       "text_examples": [
@@ -303,87 +328,85 @@
     },
     "porcentaje_transmitido": {
       "type": "number",
-      "format": "porcentaje (0-100)",
-      "description": "Porcentaje de la propiedad que se transmite",
+      "required": false,
+      "format": "porcentaje_0_100",
+      "description": "Porcentaje del bien transmitido.",
       "rules": ["Normalmente 100 si se transmite la totalidad"],
       "examples": ["100", "50"],
       "text_examples": []
     },
     "tipo_gravamen": {
       "type": "number",
+      "required": false,
       "format": "porcentaje",
-      "description": "Tipo impositivo aplicable (Comunitat Valenciana: 10% general para TPO; AJD: 1,5%)",
-      "rules": [
-        "TPO: 10% general, puede haber reducción por vivienda habitual, familia numerosa, etc.",
-        "AJD: 1,5% con carácter general"
-      ],
+      "description": "Tipo de gravamen. No inferir si no consta en el documento.",
+      "rules": ["TPO general Comunitat Valenciana: 10%", "AJD: 1,5%"],
       "examples": ["10", "8", "1.5"],
       "text_examples": []
     },
     "cuota_tributaria": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Cuota tributaria resultante (base imponible × tipo gravamen × porcentaje / 100)",
       "required": false,
-      "calculable": true,
-      "rules": ["Cuota = base_imponible × tipo_gravamen / 100", "Si no aparece explícitamente, dejar vacío — el sistema lo calculará"],
-      "examples": ["15000", "25000"],
+      "format": "importe_eur",
+      "description": "Cuota tributaria. No calcular en esta fase si no consta expresamente.",
+      "rules": [],
+      "examples": ["15000"],
       "text_examples": []
     },
     "motivo_no_ingreso": {
       "type": "string",
-      "format": "enum",
-      "description": "Motivo por el que no se ingresa cuota: exención, no sujeción, beneficio fiscal, o vacío si hay cuota a ingresar",
       "required": false,
-      "rules": [
-        "Vacío si hay cuota a ingresar",
-        "EXENTO: la operación está exenta (art. 45 TRLITPAJD)",
-        "NO_SUJETO: la operación no está sujeta al impuesto",
-        "BENEFICIO_FISCAL: existe reducción o bonificación aplicable"
-      ],
-      "examples": ["", "EXENTO", "NO_SUJETO", "BENEFICIO_FISCAL"],
+      "format": "enum",
+      "options": ["NO_APLICA", "EXENCION", "NO_SUJECION", "PRESCRITA", "APLAZAMIENTO_FRACCIONAMIENTO"],
+      "description": "Motivo de no ingreso o ausencia de cuota.",
+      "rules": ["Solo si hay un motivo explícito para no ingresar"],
+      "examples": ["EXENCION", "NO_SUJECION"],
       "text_examples": []
     },
     "beneficio_fiscal": {
       "type": "string",
-      "format": "texto",
-      "description": "Descripción del beneficio fiscal aplicado (exención, reducción de tipo, bonificación), si procede",
       "required": false,
-      "rules": ["Solo rellenar si hay beneficio fiscal aplicable"],
-      "examples": ["Vivienda habitual familia numerosa", "Joven menor de 35 años VH"],
+      "description": "Descripción del beneficio fiscal o fundamento legal.",
+      "rules": [],
+      "examples": ["Vivienda habitual familia numerosa", "Exención art. 45.I.B.4"],
       "text_examples": []
     },
     "presentador_nif": {
       "type": "string",
-      "format": "NIF/NIE/CIF",
-      "description": "NIF/NIE/CIF del presentador de la autoliquidación (puede ser el propio sujeto pasivo o un profesional)",
       "required": false,
-      "rules": ["Puede coincidir con el sujeto pasivo o ser un gestor/abogado diferente"],
+      "format": "NIF_NIE_CIF",
+      "description": "NIF/NIE/CIF del presentador o gestor.",
+      "rules": [],
       "examples": ["12345678A", "B12345678"],
       "text_examples": []
     },
     "presentador_nombre": {
       "type": "string",
-      "format": "nombre_completo",
-      "description": "Nombre completo o razón social del presentador de la autoliquidación",
       "required": false,
+      "description": "Nombre o razón social del presentador.",
       "rules": [],
-      "examples": ["MAM Solicitors SL", "MARÍA GARCÍA LÓPEZ"],
+      "examples": ["MAM Solicitors SL"],
       "text_examples": []
     },
     "es_complementaria": {
       "type": "boolean",
-      "format": "true/false",
-      "description": "Indica si esta declaración es complementaria de otra anterior para el mismo hecho imponible",
       "required": false,
-      "rules": ["true solo si se menciona explícitamente que es una autoliquidación complementaria"],
+      "format": "true_false",
+      "description": "Marca si la autoliquidación es complementaria.",
+      "rules": ["true solo si se menciona explícitamente"],
       "examples": ["false", "true"],
+      "text_examples": []
+    },
+    "numero_justificante_anterior": {
+      "type": "string",
+      "required": false,
+      "description": "Número de justificante anterior si es complementaria.",
+      "rules": [],
+      "examples": [],
       "text_examples": []
     }
   },
   "output_format": {
-    "type": "xml",
-    "target": "Modelo 600 Comunitat Valenciana - SARA2600 / ATV",
-    "note": "XML normalizado compatible con el portal ATV (Agència Tributària Valenciana). Tipo gravamen TPO general: 10%. AJD: 1,5%."
+    "type": "xml"
   }
 }

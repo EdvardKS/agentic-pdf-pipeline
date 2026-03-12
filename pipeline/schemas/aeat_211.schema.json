@@ -1,185 +1,218 @@
 {
   "document_type": "aeat_modelo_211",
-  "description": "Retención e ingreso a cuenta por adquisición de inmuebles a no residentes (IRNR) - AEAT Modelo 211",
+  "description": "Schema corregido para extracción del Modelo 211 AEAT.",
+  "extraction_policy": {
+    "null_if_missing": true,
+    "do_not_infer_unknown_values": true,
+    "do_not_calculate_tax_fields_without_source": false,
+    "normalize_dates_to": "YYYY-MM-DD",
+    "for_legal_entities": "usar razon_social en *_nombre y dejar *_apellido1/*_apellido2 a null"
+  },
   "fields": {
     "ejercicio": {
       "type": "string",
+      "required": true,
       "format": "YYYY",
-      "description": "Año fiscal al que corresponde la declaración (año en que se realiza la compraventa)",
+      "description": "Ejercicio correspondiente al año de la transmisión.",
       "rules": ["Año en 4 dígitos del momento de la transmisión"],
-      "examples": ["2024", "2023"],
+      "examples": ["2024", "2026"],
       "text_examples": []
     },
     "periodo": {
       "type": "string",
-      "format": "0A (periodo único anual)",
-      "description": "Período de declaración del modelo 211. Siempre es 0A (período único anual)",
-      "rules": ["Siempre '0A' para el modelo 211"],
+      "required": true,
+      "format": "constante",
+      "options": ["0A"],
+      "description": "Periodo fijo del modelo 211. Siempre es 0A.",
+      "rules": ["Siempre '0A' — el modelo 211 es de período único anual"],
       "examples": ["0A"],
+      "text_examples": []
+    },
+    "retenedor_f_j": {
+      "type": "string",
+      "required": false,
+      "format": "enum",
+      "options": ["F", "J"],
+      "description": "Naturaleza del retenedor/comprador: F=persona física, J=persona jurídica.",
+      "rules": [],
+      "examples": ["F", "J"],
       "text_examples": []
     },
     "retenedor_nif": {
       "type": "string",
-      "format": "NIF/NIE/CIF",
-      "description": "NIF o NIE del retenedor. El RETENEDOR es el COMPRADOR del inmueble, quien paga el precio y practica la retención del 3% para ingresarla en Hacienda.",
       "required": true,
+      "format": "NIF_NIE_CIF",
+      "description": "NIF/NIE/CIF del retenedor, que es el COMPRADOR del inmueble.",
       "rules": [
         "IMPORTANTE: El retenedor es el COMPRADOR, no el vendedor",
-        "Busca las palabras: 'comprador', 'compradora', 'adquirente', 'adquirentes', 'parte compradora', 'parte adquirente'",
+        "Busca las palabras: 'comprador', 'compradora', 'adquirente', 'parte compradora', 'parte adquirente'",
         "Su DNI/NIF está junto a las palabras anteriores",
-        "Puede ser persona física (NIF/NIE) o jurídica (CIF)",
-        "Si hay varios compradores, usa el NIF del primero mencionado",
-        "El comprador es quien PAGA el precio de compra al vendedor no residente"
+        "Si hay varios compradores, usa el NIF del primero mencionado"
       ],
       "examples": ["12345678A", "B12345678", "X1234567A"],
       "text_examples": [
         {"text": "COMPRADORA: MARÍA GARCÍA LÓPEZ, con DNI 12345678A", "value": "12345678A"},
-        {"text": "PARTE ADQUIRENTE: DON PEDRO RUIZ SANZ, titular del DNI número 27436036A", "value": "27436036A"},
-        {"text": "La parte compradora, FUSTER CONSULTING S.L., con CIF B73214108", "value": "B73214108"}
+        {"text": "PARTE ADQUIRENTE: DON PEDRO RUIZ SANZ, titular del DNI número 27436036A", "value": "27436036A"}
       ]
     },
     "retenedor_apellido1": {
       "type": "string",
-      "format": "texto",
-      "description": "Primer apellido del retenedor (comprador)",
+      "required": false,
+      "description": "Primer apellido del retenedor si es persona física.",
       "rules": [],
       "examples": ["GARCÍA"],
       "text_examples": []
     },
     "retenedor_apellido2": {
       "type": "string",
-      "format": "texto",
-      "description": "Segundo apellido del retenedor (comprador)",
+      "required": false,
+      "description": "Segundo apellido del retenedor si es persona física.",
       "rules": [],
       "examples": ["LÓPEZ"],
       "text_examples": []
     },
     "retenedor_nombre": {
       "type": "string",
-      "format": "texto",
-      "description": "Nombre del retenedor (comprador) o razón social si es persona jurídica",
+      "required": true,
+      "description": "Nombre del retenedor o razón social si es persona jurídica.",
       "rules": [],
       "examples": ["MARÍA", "Inversiones XYZ SL"],
       "text_examples": []
     },
     "retenedor_tipo_via": {
       "type": "string",
-      "format": "texto",
-      "description": "Tipo de vía del domicilio del retenedor (CALLE, AVENIDA, PLAZA, CAMINO...)",
       "required": false,
+      "description": "Tipo de vía del domicilio del retenedor (CALLE, AVENIDA, PLAZA...).",
       "rules": [],
-      "examples": ["CALLE", "AVENIDA", "PLAZA", "CAMINO", "CARRETERA"],
+      "examples": ["CALLE", "AVENIDA", "PLAZA"],
       "text_examples": []
     },
     "retenedor_nombre_via": {
       "type": "string",
-      "format": "texto",
-      "description": "Nombre de la vía del domicilio del retenedor (sin el tipo de vía)",
       "required": false,
+      "description": "Nombre de la vía del domicilio del retenedor (sin el tipo de vía).",
       "rules": [],
-      "examples": ["MAYOR", "DE LA CONSTITUCIÓN", "JUAN CARLOS I"],
+      "examples": ["MAYOR", "JUAN CARLOS I"],
       "text_examples": []
     },
     "retenedor_numero_via": {
       "type": "string",
-      "format": "texto",
-      "description": "Número del inmueble en la vía del domicilio del retenedor",
       "required": false,
+      "description": "Número o identificador de la vía del retenedor.",
       "rules": [],
       "examples": ["14", "3", "S/N"],
       "text_examples": []
     },
     "retenedor_piso": {
       "type": "string",
-      "format": "texto",
-      "description": "Piso y puerta del domicilio del retenedor",
       "required": false,
+      "description": "Piso o complemento del domicilio del retenedor.",
       "rules": [],
-      "examples": ["3º A", "BAJO", "1ºB"],
+      "examples": ["3º A", "BAJO"],
       "text_examples": []
     },
     "retenedor_domicilio": {
       "type": "string",
+      "required": false,
       "format": "direccion_postal",
-      "description": "Domicilio fiscal completo del retenedor (comprador) — calle, número, piso",
+      "description": "Dirección completa del retenedor en España.",
       "rules": [],
       "examples": ["Calle Mayor 14, 3ºA, Madrid"],
       "text_examples": []
     },
     "retenedor_municipio": {
       "type": "string",
-      "format": "texto",
-      "description": "Municipio del domicilio fiscal del retenedor",
+      "required": false,
+      "description": "Municipio del retenedor.",
       "rules": [],
       "examples": ["Madrid", "Barcelona", "Valencia"],
       "text_examples": []
     },
     "retenedor_provincia": {
       "type": "string",
-      "format": "texto",
-      "description": "Provincia del domicilio fiscal del retenedor",
+      "required": false,
+      "description": "Provincia del retenedor.",
       "rules": [],
       "examples": ["Madrid", "Barcelona"],
       "text_examples": []
     },
     "retenedor_cp": {
       "type": "string",
-      "format": "codigo_postal_5_digitos",
-      "description": "Código postal del domicilio del retenedor",
+      "required": false,
+      "format": "codigo_postal",
+      "description": "Código postal del retenedor.",
       "rules": [],
       "examples": ["28001", "08001"],
       "text_examples": []
     },
+    "numero_adquirentes": {
+      "type": "integer",
+      "required": false,
+      "description": "Número total de adquirentes del inmueble.",
+      "rules": [],
+      "examples": ["1", "2"],
+      "text_examples": []
+    },
+    "transmitente_nr_f_j": {
+      "type": "string",
+      "required": false,
+      "format": "enum",
+      "options": ["F", "J"],
+      "description": "Naturaleza del transmitente no residente: F=persona física, J=persona jurídica.",
+      "rules": [],
+      "examples": ["F", "J"],
+      "text_examples": []
+    },
     "transmitente_nr_nif": {
       "type": "string",
-      "format": "NIF/NIE/identificacion_extranjera",
-      "description": "Identificación fiscal del transmitente no residente (vendedor). Puede ser NIE español o número de identificación extranjero",
+      "required": false,
+      "format": "NIF_o_identificacion_extranjera",
+      "description": "NIF español o identificación disponible del transmitente no residente (vendedor).",
       "rules": [
-        "El transmitente es el vendedor no residente en España",
-        "Si tiene NIE: X/Y/Z + 7 dígitos + letra",
-        "Si no tiene NIE: número de identificación del país de residencia (pasaporte u otro)"
+        "El transmitente es el vendedor NO RESIDENTE en España",
+        "Si tiene NIE español: X/Y/Z + 7 dígitos + letra",
+        "Si no tiene NIE: número de pasaporte u otro documento de identidad extranjero"
       ],
-      "examples": ["X7654321C", "FR1234567890", "124187926"],
+      "examples": ["X7654321C", "Y4351263E", "124187926"],
       "text_examples": [
-        {"text": "VENDEDOR: PIERRE DUPONT, pasaporte FR1234567890, residente en Francia", "value": "FR1234567890"},
         {"text": "NIE Y4351263E, pasaporte número 124187926", "value": "Y4351263E"}
       ]
     },
     "transmitente_nr_apellido1": {
       "type": "string",
-      "format": "texto",
-      "description": "Primer apellido o primer componente del nombre del transmitente no residente",
+      "required": false,
+      "description": "Primer apellido del transmitente no residente si es persona física.",
       "rules": [],
-      "examples": ["DUPONT", "SMITH", "MOON"],
+      "examples": ["MOON", "SMITH"],
       "text_examples": []
     },
     "transmitente_nr_apellido2": {
       "type": "string",
-      "format": "texto",
-      "description": "Segundo apellido del transmitente no residente (si lo tiene)",
-      "rules": ["Puede estar vacío si el transmitente es de país con un solo apellido"],
-      "examples": ["MARTIN", "ANN", ""],
+      "required": false,
+      "description": "Segundo apellido del transmitente no residente si es persona física.",
+      "rules": ["Puede estar vacío para personas de países con un solo apellido"],
+      "examples": ["ANN", ""],
       "text_examples": []
     },
     "transmitente_nr_nombre": {
       "type": "string",
-      "format": "texto",
-      "description": "Nombre de pila del transmitente no residente",
+      "required": true,
+      "description": "Nombre del transmitente no residente o razón social si es persona jurídica.",
       "rules": [],
-      "examples": ["PIERRE", "JOHN", "PHILLIP"],
+      "examples": ["PHILLIP", "SUSAN"],
       "text_examples": []
     },
     "transmitente_nr_pais_residencia": {
       "type": "string",
-      "format": "codigo_pais_ISO_3166_alfa2",
-      "description": "Código de país de residencia fiscal del transmitente no residente",
+      "required": true,
+      "format": "codigo_pais",
+      "description": "Código ISO 3166-1 alfa-2 del país de residencia fiscal del transmitente no residente.",
       "rules": [
-        "Código ISO 3166-1 alfa-2 de 2 letras",
-        "FR=Francia, GB=Reino Unido, DE=Alemania, IT=Italia, PT=Portugal, NL=Países Bajos, IE=Irlanda"
+        "FR=Francia, GB=Reino Unido, DE=Alemania, NL=Países Bajos, IE=Irlanda, IT=Italia, PT=Portugal, BE=Bélgica",
+        "US=Estados Unidos, AU=Australia, CA=Canadá"
       ],
-      "examples": ["FR", "GB", "DE", "IT", "PT", "NL", "IE"],
+      "examples": ["GB", "NL", "IE", "FR", "DE"],
       "text_examples": [
-        {"text": "residente en Francia", "value": "FR"},
         {"text": "residente en el Reino Unido", "value": "GB"},
         {"text": "de nacionalidad neerlandesa, residente en Países Bajos", "value": "NL"},
         {"text": "de nacionalidad irlandesa", "value": "IE"}
@@ -187,40 +220,46 @@
     },
     "transmitente_nr_domicilio_pais": {
       "type": "string",
-      "format": "direccion_postal",
-      "description": "Dirección del transmitente no residente en su país de residencia",
       "required": false,
+      "format": "direccion_postal_extranjera",
+      "description": "Dirección completa del transmitente no residente en su país de residencia.",
       "rules": ["Copiar la dirección extranjera tal como aparece en la escritura"],
-      "examples": ["21 Grange Park Close Leeds LS25 7JD", "12 Rue de la Paix, 75001 Paris"],
+      "examples": ["21 Grange Park Close Leeds LS25 7JD"],
       "text_examples": []
     },
     "transmitente_nr_fecha_nacimiento": {
       "type": "date",
-      "format": "YYYY-MM-DD",
-      "description": "Fecha de nacimiento del transmitente no residente",
       "required": false,
-      "rules": ["Solo si aparece explícitamente en el documento", "Puede aparecer como 'nacido el [fecha]'"],
-      "examples": ["1965-04-20", "1948-11-30"],
+      "format": "YYYY-MM-DD",
+      "description": "Fecha de nacimiento del transmitente no residente si es persona física.",
+      "rules": ["Solo si aparece explícitamente en el documento"],
+      "examples": ["1965-04-20"],
       "text_examples": []
     },
     "transmitente_nr_lugar_nacimiento": {
       "type": "string",
-      "format": "texto",
-      "description": "Lugar de nacimiento del transmitente no residente",
       "required": false,
+      "description": "Lugar de nacimiento del transmitente no residente si es persona física.",
       "rules": ["Solo si aparece explícitamente en la escritura"],
-      "examples": ["Leeds (Reino Unido)", "Dublin (Irlanda)", "Amsterdam (Países Bajos)"],
+      "examples": ["Leeds (Reino Unido)"],
+      "text_examples": []
+    },
+    "numero_transmitentes": {
+      "type": "integer",
+      "required": false,
+      "description": "Número total de transmitentes no residentes.",
+      "rules": [],
+      "examples": ["1", "2"],
       "text_examples": []
     },
     "fecha_transmision": {
       "type": "date",
+      "required": true,
       "format": "YYYY-MM-DD",
-      "required": false,
-      "description": "Fecha de la transmisión del inmueble (fecha de la escritura de compraventa).",
+      "description": "Fecha de transmisión del inmueble (fecha de la escritura de compraventa).",
       "rules": [
         "Fecha de firma de la escritura notarial",
-        "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'",
-        "Si no aparece explícitamente, dejar vacío"
+        "Puede aparecer como 'En [ciudad] a [día] de [mes] de [año]'"
       ],
       "examples": ["2024-03-12", "2026-03-02"],
       "text_examples": [
@@ -229,78 +268,80 @@
     },
     "inmueble_referencia_catastral": {
       "type": "string",
+      "required": false,
       "format": "referencia_catastral",
-      "description": "Referencia catastral del inmueble transmitido",
+      "description": "Referencia catastral del inmueble transmitido (20 caracteres).",
       "rules": [],
       "examples": ["0012301VK4873F0001QJ"],
       "text_examples": []
     },
     "inmueble_tipo_documento": {
       "type": "string",
+      "required": true,
       "format": "enum",
-      "description": "Tipo de documento que documenta la transmisión del inmueble",
-      "required": false,
-      "rules": [
-        "ESCRITURA_PUBLICA: escritura pública notarial (más habitual)",
-        "DOCUMENTO_PRIVADO: contrato privado"
-      ],
-      "examples": ["ESCRITURA_PUBLICA", "DOCUMENTO_PRIVADO"],
-      "text_examples": []
+      "options": ["PUBLICO", "PRIVADO"],
+      "description": "Naturaleza del documento de transmisión: PUBLICO (escritura notarial) o PRIVADO.",
+      "rules": [],
+      "examples": ["PUBLICO", "PRIVADO"],
+      "text_examples": [
+        {"text": "Escritura pública ante Notario", "value": "PUBLICO"}
+      ]
     },
     "inmueble_notario": {
       "type": "string",
-      "format": "nombre_completo",
-      "description": "Nombre y apellidos del notario que autoriza la escritura",
       "required": false,
+      "description": "Nombre del notario si el documento es público.",
       "rules": [],
       "examples": ["Juan García López"],
       "text_examples": []
     },
     "inmueble_numero_protocolo": {
       "type": "string",
-      "format": "numero",
-      "description": "Número de protocolo notarial de la escritura de transmisión",
       "required": false,
+      "description": "Número de protocolo del documento público.",
       "rules": [],
-      "examples": ["1234", "567"],
+      "examples": ["1234"],
       "text_examples": []
     },
     "inmueble_direccion": {
       "type": "string",
+      "required": true,
       "format": "direccion_postal",
-      "description": "Dirección completa del inmueble transmitido",
+      "description": "Dirección del inmueble transmitido.",
       "rules": [],
       "examples": ["Calle Mayor 12, 1ºA, Murcia"],
       "text_examples": []
     },
     "inmueble_municipio": {
       "type": "string",
-      "format": "texto",
-      "description": "Municipio donde está ubicado el inmueble",
+      "required": true,
+      "description": "Municipio del inmueble.",
       "rules": [],
       "examples": ["Murcia", "Marbella", "Alicante"],
       "text_examples": []
     },
     "inmueble_provincia": {
       "type": "string",
-      "format": "texto",
-      "description": "Provincia donde está ubicado el inmueble",
+      "required": false,
+      "description": "Provincia del inmueble.",
       "rules": [],
       "examples": ["Murcia", "Málaga", "Alicante"],
       "text_examples": []
     },
     "inmueble_cp": {
       "type": "string",
-      "format": "codigo_postal_5_digitos",
-      "description": "Código postal del inmueble",
+      "required": false,
+      "format": "codigo_postal",
+      "description": "Código postal del inmueble.",
       "rules": [],
-      "examples": ["30001", "29600", "03001"],
+      "examples": ["30001", "29600"],
       "text_examples": []
     },
     "contraprestacion": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Precio de venta del inmueble (contraprestación acordada). Base sobre la que se calcula la retención del 3%",
+      "required": true,
+      "format": "importe_eur",
+      "description": "Importe total de la contraprestación o precio de transmisión. Base para calcular la retención del 3%.",
       "rules": [
         "Solo el número, sin símbolo de moneda",
         "En compraventa: el precio pactado",
@@ -313,52 +354,64 @@
     },
     "retencion_3pct": {
       "type": "number",
-      "format": "importe_euros",
-      "required": false,
-      "calculable": true,
-      "description": "Importe de la retención practicada (3% de la contraprestación). Si no aparece en el documento, se calculará automáticamente.",
+      "required": true,
+      "format": "importe_eur",
+      "description": "Importe de la retención del 3%. Puede calcularse a partir de la contraprestación si el precio es inequívoco.",
       "rules": [
         "Retención = contraprestación × 0.03",
-        "Si el precio es 150000, la retención es 4500",
-        "Si no encuentras este dato en el documento, devuelve cadena vacía — el sistema lo calculará"
+        "Si el precio es 150.000 €, la retención es 4.500 €"
       ],
-      "examples": ["4500", "7500", "2550"],
+      "examples": ["4500", "7500"],
       "text_examples": [
         {"text": "retención del 3% sobre 150.000 €", "value": "4500"}
       ]
     },
     "liquidacion_ingreso_anterior": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Importe ingresado en una autoliquidación anterior del mismo hecho imponible (para complementarias)",
       "required": false,
-      "rules": ["Solo para autoliquidaciones complementarias", "Vacío o 0 en declaraciones ordinarias"],
+      "format": "importe_eur",
+      "description": "Importe ingresado con anterioridad si la autoliquidación es complementaria.",
+      "rules": [],
       "examples": ["0", "3000"],
       "text_examples": []
     },
     "es_complementaria": {
       "type": "boolean",
-      "format": "true/false",
-      "description": "Indica si esta declaración es complementaria de otra anterior",
       "required": false,
-      "rules": ["true solo si se menciona explícitamente que es una declaración complementaria"],
+      "format": "true_false",
+      "description": "Marca si la autoliquidación es complementaria.",
+      "rules": [],
       "examples": ["false", "true"],
       "text_examples": []
     },
     "numero_justificante_anterior": {
       "type": "string",
-      "format": "numero",
-      "description": "Número de justificante de la autoliquidación anterior (para complementarias)",
       "required": false,
-      "rules": ["Solo para declaraciones complementarias"],
-      "examples": ["2024G211XXXXXXXXX"],
+      "description": "Número de justificante anterior si es complementaria.",
+      "rules": [],
+      "examples": [],
+      "text_examples": []
+    },
+    "anexo_adquirentes": {
+      "type": "array",
+      "required": false,
+      "format": "array<object>",
+      "description": "Adquirentes adicionales si hay más de uno (nif, nombre, porcentaje).",
+      "rules": [],
+      "examples": [],
+      "text_examples": []
+    },
+    "anexo_transmitentes": {
+      "type": "array",
+      "required": false,
+      "format": "array<object>",
+      "description": "Transmitentes no residentes adicionales si hay más de uno (nif, nombre, pais_residencia, contraprestacion).",
+      "rules": [],
+      "examples": [],
       "text_examples": []
     }
   },
   "output_format": {
-    "type": "boe",
-    "target": "AEAT Modelo 211",
-    "filename_pattern": "NIF_YYYY_0A.211",
-    "note": "Fichero en formato de diseño de registro AEAT para importación en la aplicación web de la AEAT. Retención siempre 3% sobre precio de venta."
+    "type": "boe"
   }
 }

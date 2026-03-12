@@ -27,9 +27,33 @@ def build_extraction_prompt(text: str, schema: dict = None) -> str:
         return _build_flat_prompt(text, schema)
 
 
+def _build_policy_block(schema: dict) -> str:
+    """Construye el bloque de instrucciones de extraction_policy si existe."""
+    policy = schema.get("extraction_policy", {})
+    if not policy:
+        return ""
+
+    lines = []
+    if policy.get("null_if_missing"):
+        lines.append("- Si un campo NO aparece en el documento, devuelve null (no cadena vacía).")
+    if policy.get("do_not_infer_unknown_values"):
+        lines.append("- NO inferir valores. Extrae SOLO lo que está explícitamente en el texto.")
+    if policy.get("do_not_calculate_tax_fields_without_source"):
+        lines.append("- NO calcular campos fiscales (cuota, tipo gravamen, base imponible) si no aparecen en el documento.")
+    if policy.get("normalize_dates_to"):
+        lines.append(f"- Normalizar todas las fechas al formato {policy['normalize_dates_to']}.")
+    if policy.get("for_legal_entities"):
+        lines.append(f"- Personas jurídicas: {policy['for_legal_entities']}.")
+
+    if not lines:
+        return ""
+    return "POLÍTICA DE EXTRACCIÓN:\n" + "\n".join(lines)
+
+
 def _build_flat_prompt(text: str, schema: dict) -> str:
     """Prompt estándar para schemas de campo plano."""
     fields = schema["fields"]
+    policy_block = _build_policy_block(schema)
 
     prompt_sections = []
     for field_name, field_data in fields.items():
@@ -38,16 +62,29 @@ def _build_flat_prompt(text: str, schema: dict) -> str:
         fmt = field_data.get("format", "")
         examples = field_data.get("examples", [])
         rules = field_data.get("rules", [])
+        options = field_data.get("options", [])
+        is_required = field_data.get("required", True)
+
+        # Añadir indicador opcional
+        required_tag = "" if is_required is not False else " [OPCIONAL]"
+
+        # Añadir opciones válidas si es enum
+        options_text = ""
+        if options:
+            options_text = f"Opciones válidas: {', '.join(options)}"
 
         example_text = "\n".join([f"- {e}" for e in examples])
         rules_text = "\n".join([f"- {r}" for r in rules]) if rules else ""
 
         reglas_bloque = ("Reglas:\n" + rules_text) if rules_text else ""
+        opciones_bloque = options_text if options_text else ""
+
         section = f"""
-CAMPO: {field_name}
+CAMPO: {field_name}{required_tag}
 Tipo: {field_type}
 Formato esperado: {fmt}
 Descripción: {description}
+{opciones_bloque}
 {reglas_bloque}
 Ejemplos válidos:
 {example_text}
@@ -56,12 +93,29 @@ Ejemplos válidos:
 
     fields_prompt = "\n".join(prompt_sections)
 
-    json_template_keys = ",\n  ".join([f'"{k}": "..."' for k in fields.keys()])
+    # Plantilla JSON: arrays usan [], booleans usan false, resto usan "..."
+    template_parts = []
+    for k, v in fields.items():
+        ftype = v.get("type", "string")
+        if ftype == "array":
+            template_parts.append(f'"{k}": []')
+        elif ftype == "boolean":
+            template_parts.append(f'"{k}": false')
+        elif ftype in ("number", "integer"):
+            template_parts.append(f'"{k}": null')
+        else:
+            template_parts.append(f'"{k}": null')
+    json_template_keys = ",\n  ".join(template_parts)
     json_template = "{\n  " + json_template_keys + "\n}"
+
+    # Reglas de output según si hay política null_if_missing
+    policy = schema.get("extraction_policy", {})
+    null_rule = "null" if policy.get("null_if_missing") else "cadena vacía \"\""
+    policy_section = f"\n{policy_block}\n" if policy_block else ""
 
     return f"""
 Extrae del documento los siguientes campos.
-
+{policy_section}
 {fields_prompt}
 
 REGLAS OBLIGATORIAS:
@@ -71,7 +125,9 @@ REGLAS OBLIGATORIAS:
 3. No uses listas con *.
 4. No uses markdown.
 5. No escribas texto antes ni después del JSON.
-6. Si un campo no se encuentra en el documento, devuelve una cadena vacía "".
+6. Si un campo no se encuentra en el documento, devuelve {null_rule}.
+7. Los campos tipo array devuelven [] si no hay datos.
+8. Los campos tipo boolean devuelven true o false (sin comillas).
 
 Formato exacto requerido:
 

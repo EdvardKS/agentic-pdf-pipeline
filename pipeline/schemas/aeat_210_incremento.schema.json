@@ -1,39 +1,42 @@
 {
   "document_type": "aeat_modelo_210_incremento_patrimonial",
-  "description": "IRNR - Incremento patrimonial por transmisión de inmueble por no residente - AEAT Modelo 210",
+  "description": "Schema corregido para extracción del Modelo 210 AEAT por incremento patrimonial en transmisión de inmueble.",
+  "extraction_policy": {
+    "null_if_missing": true,
+    "do_not_infer_unknown_values": true,
+    "do_not_calculate_tax_fields_without_source": true,
+    "normalize_dates_to": "YYYY-MM-DD",
+    "for_legal_entities": "usar razon_social en *_nombre y dejar *_apellido1/*_apellido2 a null"
+  },
   "fields": {
     "ejercicio": {
       "type": "string",
+      "required": true,
       "format": "YYYY",
-      "description": "Año fiscal al que corresponde la declaración (año de la transmisión del inmueble)",
+      "description": "Ejercicio correspondiente al año del devengo (año de la transmisión).",
       "rules": ["Año en 4 dígitos del momento de la transmisión"],
-      "examples": ["2024", "2023"],
+      "examples": ["2024", "2026"],
       "text_examples": []
     },
     "periodo": {
       "type": "string",
-      "format": "codigo_periodo",
-      "description": "Período trimestral de la transmisión. 1T=enero-marzo, 2T=abril-junio, 3T=julio-septiembre, 4T=octubre-diciembre",
-      "rules": [
-        "Determinar a partir de la fecha de la escritura",
-        "Enero-Marzo → 1T",
-        "Abril-Junio → 2T",
-        "Julio-Septiembre → 3T",
-        "Octubre-Diciembre → 4T"
-      ],
-      "examples": ["1T", "2T", "3T", "4T"],
-      "text_examples": [
-        {"text": "escritura otorgada el 12 de marzo de 2024", "value": "1T"},
-        {"text": "escritura otorgada el 2 de marzo de 2026", "value": "1T"}
-      ]
+      "required": true,
+      "format": "constante",
+      "options": ["0A"],
+      "description": "Periodo fijo para la modalidad de incremento patrimonial del modelo 210. Siempre es 0A (período único anual).",
+      "rules": ["Siempre '0A' — el incremento patrimonial por transmisión de inmueble usa período anual, no trimestral"],
+      "examples": ["0A"],
+      "text_examples": []
     },
     "tipo_renta": {
       "type": "string",
+      "required": true,
       "format": "enum",
-      "description": "Código del tipo de renta según la clasificación del Modelo 210: 28 = ganancias patrimoniales derivadas de transmisión de inmuebles, 33 = ganancias por transmisión de acciones/participaciones, 34 = otras ganancias patrimoniales",
+      "options": ["28", "33", "34"],
+      "description": "Código del tipo de renta según la clasificación AEAT del Modelo 210.",
       "rules": [
-        "28: ganancias patrimoniales derivadas de la transmisión de bienes inmuebles — EL MÁS HABITUAL para compraventas de inmuebles",
-        "33: ganancias patrimoniales derivadas de transmisión de valores (acciones)",
+        "28: ganancias patrimoniales derivadas de la transmisión de bienes inmuebles — EL MÁS HABITUAL para compraventas de inmuebles por no residentes",
+        "33: ganancias patrimoniales derivadas de transmisión de valores (acciones, participaciones)",
         "34: otras ganancias patrimoniales no incluidas en 28 o 33"
       ],
       "examples": ["28", "33", "34"],
@@ -41,277 +44,306 @@
         {"text": "venta de vivienda por no residente", "value": "28"}
       ]
     },
+    "declarante_f_j": {
+      "type": "string",
+      "required": false,
+      "format": "enum",
+      "options": ["F", "J"],
+      "description": "Naturaleza del contribuyente no residente: F=persona física, J=persona jurídica.",
+      "rules": [],
+      "examples": ["F", "J"],
+      "text_examples": []
+    },
     "declarante_nif": {
       "type": "string",
-      "format": "NIE/identificacion_extranjera",
-      "description": "NIE español o identificación fiscal extranjera del no residente que declara la ganancia patrimonial (el vendedor)",
+      "required": true,
+      "format": "NIE_o_identificacion_extranjera",
+      "description": "NIF español o identificación fiscal del contribuyente no residente (vendedor).",
       "rules": [
-        "El declarante es el vendedor no residente",
+        "El declarante es el vendedor NO RESIDENTE en España",
         "Si tiene NIE español: X/Y/Z + 7 dígitos + letra",
-        "Si no tiene NIE: número de identificación del país de residencia"
+        "Si no tiene NIE: número de pasaporte u otro documento de identidad"
       ],
-      "examples": ["X7654321C", "FR1234567890", "GB123456789", "Y4351263E"],
+      "examples": ["X7654321C", "Y4351263E", "GB123456789"],
       "text_examples": []
     },
     "declarante_calidad": {
       "type": "string",
+      "required": true,
       "format": "enum",
-      "description": "Calidad en que actúa quien firma la declaración: C = contribuyente (el propio vendedor), R = representante fiscal",
+      "options": ["C", "R"],
+      "description": "Calidad en la que se firma o presenta la declaración: C=contribuyente (el propio vendedor), R=representante fiscal.",
       "rules": [
         "C: el propio contribuyente (vendedor no residente) firma",
         "R: un representante fiscal en España firma en nombre del contribuyente"
       ],
       "examples": ["C", "R"],
       "text_examples": [
-        {"text": "el vendedor firma personalmente", "value": "C"},
         {"text": "el abogado actúa en representación del vendedor", "value": "R"}
       ]
     },
     "declarante_apellido1": {
       "type": "string",
-      "format": "texto",
-      "description": "Primer apellido o primer componente del nombre del declarante no residente",
+      "required": false,
+      "description": "Primer apellido del contribuyente si es persona física.",
       "rules": [],
-      "examples": ["DUPONT", "SMITH", "MOON", "RANSON"],
+      "examples": ["MOON", "RANSON"],
       "text_examples": []
     },
     "declarante_apellido2": {
       "type": "string",
-      "format": "texto",
-      "description": "Segundo apellido del declarante (si lo tiene)",
+      "required": false,
+      "description": "Segundo apellido del contribuyente si es persona física.",
       "rules": ["Puede estar vacío para personas de países con un solo apellido"],
-      "examples": ["MARTIN", "ANN", "MARY", ""],
+      "examples": ["ANN", "MARY", ""],
       "text_examples": []
     },
     "declarante_nombre": {
       "type": "string",
-      "format": "texto",
-      "description": "Nombre de pila del declarante no residente",
+      "required": true,
+      "description": "Nombre del contribuyente o razón social si es persona jurídica.",
       "rules": [],
-      "examples": ["PIERRE", "JOHN", "TERESA", "MARGARET"],
+      "examples": ["PHILLIP", "TERESA", "MARGARET"],
       "text_examples": []
     },
     "declarante_fecha_nacimiento": {
       "type": "date",
-      "format": "YYYY-MM-DD",
-      "description": "Fecha de nacimiento del declarante no residente",
       "required": false,
+      "format": "YYYY-MM-DD",
+      "description": "Fecha de nacimiento del contribuyente si es persona física.",
       "rules": ["Solo si aparece explícitamente en la escritura"],
-      "examples": ["1965-04-20", "1948-11-30"],
+      "examples": ["1965-04-20"],
       "text_examples": []
     },
     "declarante_lugar_nacimiento": {
       "type": "string",
-      "format": "texto",
-      "description": "Lugar de nacimiento del declarante no residente",
       "required": false,
+      "description": "Lugar de nacimiento del contribuyente si es persona física.",
       "rules": ["Ciudad y país si se mencionan"],
       "examples": ["Leeds, Reino Unido", "Dublin, Irlanda"],
       "text_examples": []
     },
     "declarante_pais_residencia": {
       "type": "string",
-      "format": "codigo_pais_ISO_3166_alfa2",
-      "description": "Código de país de residencia fiscal del declarante",
+      "required": true,
+      "format": "codigo_pais",
+      "description": "Código ISO 3166-1 alfa-2 del país de residencia fiscal del contribuyente.",
       "rules": [
-        "Código ISO 3166-1 alfa-2",
-        "FR=Francia, GB=Reino Unido, DE=Alemania, IT=Italia, PT=Portugal, NL=Países Bajos, IE=Irlanda"
+        "FR=Francia, GB=Reino Unido, DE=Alemania, NL=Países Bajos, IE=Irlanda, IT=Italia, PT=Portugal"
       ],
-      "examples": ["FR", "GB", "DE", "IT", "PT", "NL", "IE"],
+      "examples": ["GB", "NL", "IE", "FR"],
       "text_examples": [
-        {"text": "residente en Francia", "value": "FR"},
         {"text": "de nacionalidad irlandesa", "value": "IE"},
-        {"text": "de nacionalidad neerlandesa", "value": "NL"}
+        {"text": "de nacionalidad neerlandesa", "value": "NL"},
+        {"text": "residente en el Reino Unido", "value": "GB"}
       ]
     },
     "declarante_domicilio_calle": {
       "type": "string",
-      "format": "texto",
-      "description": "Nombre de la calle o vía del domicilio del declarante en su país de residencia",
       "required": false,
+      "description": "Tipo y nombre de la vía del domicilio extranjero del contribuyente.",
       "rules": [],
-      "examples": ["Grange Park Close", "Rue de la Paix"],
+      "examples": ["Grange Park Close"],
       "text_examples": []
     },
     "declarante_domicilio_numero": {
       "type": "string",
-      "format": "texto",
-      "description": "Número del inmueble en la dirección del declarante",
       "required": false,
+      "description": "Número o identificador del domicilio extranjero.",
       "rules": [],
-      "examples": ["21", "12"],
+      "examples": ["21"],
       "text_examples": []
     },
     "declarante_domicilio_ciudad": {
       "type": "string",
-      "format": "texto",
-      "description": "Ciudad del domicilio del declarante en su país de residencia",
       "required": false,
+      "description": "Ciudad del domicilio extranjero.",
       "rules": [],
-      "examples": ["Leeds", "Paris", "Dublin"],
+      "examples": ["Leeds", "Dublin"],
       "text_examples": []
     },
     "declarante_domicilio_cp": {
       "type": "string",
-      "format": "codigo_postal",
-      "description": "Código postal del domicilio del declarante en su país",
       "required": false,
-      "rules": ["En el formato del país de residencia"],
-      "examples": ["LS25 7JD", "75001", "D02 XY00"],
+      "format": "codigo_postal",
+      "description": "Código postal del domicilio extranjero (en el formato del país de residencia).",
+      "rules": [],
+      "examples": ["LS25 7JD", "D02 XY00"],
       "text_examples": []
     },
     "declarante_domicilio_pais": {
       "type": "string",
-      "format": "direccion_postal",
-      "description": "Dirección completa del declarante en su país de residencia",
+      "required": false,
+      "format": "direccion_postal_extranjera",
+      "description": "Dirección completa del contribuyente en su país de residencia.",
       "rules": [],
-      "examples": ["21 Grange Park Close Leeds LS25 7JD", "12 Rue de la Paix, Paris"],
+      "examples": ["21 Grange Park Close Leeds LS25 7JD"],
       "text_examples": []
     },
     "titularidad": {
       "type": "string",
+      "required": true,
       "format": "enum",
-      "description": "Forma de titularidad del inmueble: C = proindiviso/condominio (cotitular), O = plena propiedad (único propietario)",
-      "required": false,
+      "options": ["C", "O"],
+      "description": "Indicador de titularidad: C=proindiviso/cotitular con cónyuge, O=titular único (plena propiedad).",
       "rules": [
-        "O: el declarante es el único propietario (titular pleno)",
-        "C: el declarante es cotitular con otros propietarios (proindiviso)"
+        "O: el declarante es el único propietario o presenta autoliquidación independiente",
+        "C: el declarante es cotitular junto con su cónyuge y presentan autoliquidación conjunta"
       ],
       "examples": ["O", "C"],
       "text_examples": [
         {"text": "único propietario", "value": "O"},
-        {"text": "copropietario al 50%", "value": "C"}
+        {"text": "matrimonio copropietario, autoliquidación conjunta", "value": "C"}
       ]
     },
     "coeficiente_participacion": {
       "type": "number",
-      "format": "porcentaje (0-100)",
-      "description": "Porcentaje de participación del declarante en el inmueble (si es cotitular)",
-      "required": false,
+      "required": true,
+      "format": "porcentaje_0_100",
+      "description": "Coeficiente de participación del contribuyente en el inmueble.",
       "rules": [
-        "100 si es propietario único",
-        "50 si son dos copropietarios a partes iguales",
-        "Solo necesario si titularidad = C"
+        "100 si es propietario único (O)",
+        "50 si son dos copropietarios a partes iguales (C)"
       ],
-      "examples": ["100", "50", "33.33"],
+      "examples": ["100", "50"],
+      "text_examples": []
+    },
+    "conyuge_nif": {
+      "type": "string",
+      "required": false,
+      "format": "NIE_o_identificacion_extranjera",
+      "description": "Identificación del cónyuge cuando titularidad = C (autoliquidación conjunta del matrimonio).",
+      "rules": ["Solo si titularidad = C"],
+      "examples": ["Y4351371S"],
+      "text_examples": []
+    },
+    "conyuge_nombre": {
+      "type": "string",
+      "required": false,
+      "description": "Nombre completo del cónyuge cuando titularidad = C.",
+      "rules": [],
+      "examples": ["SUSAN ANN MOON"],
+      "text_examples": []
+    },
+    "conyuge_coeficiente_participacion": {
+      "type": "number",
+      "required": false,
+      "format": "porcentaje_0_100",
+      "description": "Coeficiente de participación del cónyuge en el inmueble.",
+      "rules": ["Solo si titularidad = C"],
+      "examples": ["50"],
       "text_examples": []
     },
     "representante_nif": {
       "type": "string",
-      "format": "NIF/NIE",
-      "description": "NIF o NIE del representante fiscal en España (si se nombra uno en la escritura o poder notarial)",
-      "rules": ["Puede no existir representante fiscal explícito"],
+      "required": false,
+      "format": "NIF_NIE",
+      "description": "NIF/NIE del representante fiscal en España, si existe.",
+      "rules": [],
       "examples": ["12345678A"],
       "text_examples": []
     },
     "representante_nombre": {
       "type": "string",
-      "format": "nombre_completo",
-      "description": "Nombre completo del representante fiscal en España",
+      "required": false,
+      "description": "Nombre o razón social del representante fiscal en España.",
       "rules": [],
       "examples": ["MAM Solicitors SL", "Juana Lucas Martínez"],
       "text_examples": []
     },
     "representante_domicilio": {
       "type": "string",
-      "format": "direccion_postal",
-      "description": "Domicilio del representante fiscal en España",
       "required": false,
+      "format": "direccion_postal",
+      "description": "Domicilio del representante fiscal en España.",
       "rules": [],
       "examples": ["Calle Juan Carlos I 3, Roldán, Murcia"],
       "text_examples": []
     },
     "inmueble_referencia_catastral": {
       "type": "string",
+      "required": false,
       "format": "referencia_catastral",
-      "description": "Referencia catastral del inmueble transmitido",
+      "description": "Referencia catastral del inmueble transmitido.",
       "rules": [],
       "examples": ["0012301VK4873F0001QJ"],
       "text_examples": []
     },
     "inmueble_direccion": {
       "type": "string",
+      "required": true,
       "format": "direccion_postal",
-      "description": "Dirección completa del inmueble transmitido",
+      "description": "Dirección del inmueble transmitido.",
       "rules": [],
       "examples": ["Calle Mayor 12, 1ºA, Murcia"],
       "text_examples": []
     },
     "inmueble_municipio": {
       "type": "string",
-      "format": "texto",
-      "description": "Municipio donde está ubicado el inmueble",
+      "required": true,
+      "description": "Municipio del inmueble.",
       "rules": [],
       "examples": ["Murcia", "Marbella", "Alicante"],
       "text_examples": []
     },
     "inmueble_provincia": {
       "type": "string",
-      "format": "texto",
-      "description": "Provincia donde está ubicado el inmueble",
+      "required": false,
+      "description": "Provincia del inmueble.",
       "rules": [],
-      "examples": ["Murcia", "Málaga", "Alicante"],
+      "examples": ["Murcia", "Málaga"],
       "text_examples": []
     },
     "fecha_adquisicion": {
       "type": "date",
+      "required": false,
       "format": "YYYY-MM-DD",
-      "description": "Fecha en que el no residente adquirió el inmueble (fecha de la escritura de compra anterior)",
-      "rules": [
-        "Puede aparecer en el historial registral del inmueble",
-        "O en una referencia a la escritura de compra previa dentro del documento"
-      ],
+      "description": "Fecha de adquisición del inmueble por el contribuyente (fecha de la escritura de compra anterior).",
+      "rules": ["Puede aparecer en el historial registral del inmueble"],
       "examples": ["2010-05-20", "2015-07-15"],
       "text_examples": []
     },
     "valor_adquisicion": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Precio que pagó el no residente cuando compró el inmueble (coste de adquisición original)",
-      "rules": [
-        "Solo el número, sin símbolo de moneda",
-        "Puede aparecer en la descripción del historial del bien"
-      ],
+      "required": false,
+      "format": "importe_eur",
+      "description": "Valor de adquisición fiscalmente relevante (precio pagado cuando compró el inmueble).",
+      "rules": ["Solo el número, sin símbolo de moneda"],
       "examples": ["100000", "85000"],
       "text_examples": []
     },
     "gastos_adquisicion": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Gastos e impuestos satisfechos al adquirir el inmueble (ITP, notaría, registro, etc.)",
       "required": false,
-      "rules": [
-        "Gastos que se añaden al coste de adquisición para reducir la ganancia",
-        "ITP pagado, gastos notariales y registrales de la compra",
-        "Si no aparece explícitamente, dejar vacío"
-      ],
-      "examples": ["0", "8500", "12000"],
+      "format": "importe_eur",
+      "description": "Gastos y tributos inherentes a la adquisición (ITP pagado, notaría, registro).",
+      "rules": ["Solo si constan explícitamente"],
+      "examples": ["0", "8500"],
       "text_examples": []
     },
     "amortizaciones": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Amortizaciones fiscales practicadas si el inmueble estuvo arrendado (reducen el valor de adquisición)",
       "required": false,
-      "rules": [
-        "Solo si el inmueble fue destinado al alquiler y se practicaron amortizaciones",
-        "Reducen el valor de adquisición, incrementando la ganancia patrimonial"
-      ],
+      "format": "importe_eur",
+      "description": "Amortizaciones fiscalmente deducibles si el inmueble estuvo arrendado.",
+      "rules": ["Solo si constan explícitamente"],
       "examples": ["0", "5000"],
       "text_examples": []
     },
     "fecha_transmision": {
       "type": "date",
+      "required": true,
       "format": "YYYY-MM-DD",
-      "description": "Fecha de la transmisión actual del inmueble (fecha de la escritura de venta)",
-      "rules": ["Fecha de firma de la escritura notarial objeto del documento"],
+      "description": "Fecha de transmisión del inmueble (fecha de la escritura de venta).",
+      "rules": [],
       "examples": ["2024-03-12", "2026-03-02"],
       "text_examples": []
     },
     "valor_transmision": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Precio de venta del inmueble (valor de transmisión bruto)",
+      "required": true,
+      "format": "importe_eur",
+      "description": "Valor de transmisión neto o importe de transmisión (precio de venta).",
       "rules": ["Solo el número, sin símbolo de moneda"],
       "examples": ["150000", "200000"],
       "text_examples": [
@@ -320,169 +352,149 @@
     },
     "gastos_transmision": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Gastos e impuestos satisfechos en la transmisión (plusvalía municipal, comisión de agencia, notaría y registro de la venta, etc.)",
       "required": false,
-      "rules": [
-        "Reducen el valor de transmisión neto",
-        "Incluye: plusvalía municipal (IIVTNU) pagada por el vendedor, comisiones de agencia inmobiliaria, gastos notariales y registrales de la venta",
-        "Si no aparece explícitamente, dejar vacío"
-      ],
-      "examples": ["0", "5000", "8000"],
+      "format": "importe_eur",
+      "description": "Gastos y tributos inherentes a la transmisión (plusvalía municipal, comisión agencia, etc.).",
+      "rules": ["Solo si constan explícitamente"],
+      "examples": ["0", "5000"],
+      "text_examples": []
+    },
+    "diferencia_transmision_adquisicion": {
+      "type": "number",
+      "required": false,
+      "format": "importe_eur",
+      "description": "Diferencia entre valor de transmisión y valor de adquisición ajustado (campo de la casilla del modelo).",
+      "rules": ["Solo si consta explícitamente"],
+      "examples": ["50000", "30000"],
       "text_examples": []
     },
     "incremento_patrimonial": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Ganancia o pérdida patrimonial neta (valor_transmision - gastos_transmision - valor_adquisicion - gastos_adquisicion + amortizaciones)",
-      "rules": [
-        "Incremento = valor_transmision - valor_adquisicion (cálculo simplificado sin gastos)",
-        "Si el resultado es negativo, es una pérdida patrimonial",
-        "Si no aparece explícitamente en el documento, el sistema lo calculará"
-      ],
+      "required": false,
+      "format": "importe_eur",
+      "description": "Ganancia patrimonial sometida a tributación (puede ser negativa si hay pérdida).",
+      "rules": ["Solo si consta explícitamente. NO calcular."],
       "examples": ["50000", "30000", "-5000"],
-      "text_examples": [
-        {"text": "Compró por 100.000 € y vende por 150.000 €", "value": "50000"}
-      ]
+      "text_examples": []
     },
     "tipo_exencion": {
       "type": "string",
-      "format": "texto",
-      "description": "Código o descripción de la exención aplicable si la ganancia está exenta de IRNR",
       "required": false,
-      "rules": [
-        "Vacío si no hay exención",
-        "Ej: exención por reinversión en vivienda habitual (si es residente UE)",
-        "Ej: exención por convenio de doble imposición"
-      ],
-      "examples": ["", "Exención CDI", "Reinversión vivienda habitual"],
+      "format": "enum",
+      "options": ["NINGUNA", "REINVERSION_TOTAL", "REINVERSION_PARCIAL", "EXENCION_50_POR_CIENTO_INMUEBLE_URBANO_2012", "OTRA"],
+      "description": "Exención aplicable a la ganancia patrimonial, si existe.",
+      "rules": [],
+      "examples": ["NINGUNA", "REINVERSION_TOTAL"],
       "text_examples": []
     },
     "tipo_gravamen_aplicable": {
       "type": "number",
+      "required": false,
       "format": "porcentaje",
-      "description": "Tipo impositivo IRNR aplicable al incremento patrimonial",
+      "description": "Tipo de gravamen aplicable según la Ley del IRNR. No inferir si no consta.",
       "rules": [
-        "Residentes UE/EEE (incluye Islandia y Noruega): 19%",
-        "Resto de países (no UE/EEE): 24%",
-        "GB = Reino Unido → 24% desde Brexit (01/01/2021)",
-        "NL = Países Bajos → 19% (UE)",
-        "IE = Irlanda → 19% (UE)",
-        "Determinar según el país de residencia del declarante"
+        "Residentes UE/EEE (Francia, Alemania, Países Bajos, Irlanda, etc.): 19%",
+        "Resto de países NO UE/EEE (Reino Unido post-Brexit, USA, Australia, etc.): 24%",
+        "GB = Reino Unido → 24% desde el 01/01/2021 (post-Brexit)"
       ],
       "examples": ["19", "24"],
       "text_examples": [
-        {"text": "residente en Francia (UE)", "value": "19"},
         {"text": "residente en Países Bajos (UE)", "value": "19"},
-        {"text": "residente en Reino Unido (no UE post-Brexit)", "value": "24"},
-        {"text": "residente en Irlanda (UE)", "value": "19"}
+        {"text": "residente en Irlanda (UE)", "value": "19"},
+        {"text": "residente en Reino Unido (no UE post-Brexit)", "value": "24"}
       ]
     },
     "cuota_integra": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Cuota íntegra del impuesto (incremento_patrimonial × tipo_gravamen / 100), antes de deducciones",
       "required": false,
-      "calculable": true,
-      "rules": ["Cuota íntegra = incremento_patrimonial × tipo_gravamen / 100"],
+      "format": "importe_eur",
+      "description": "Cuota íntegra del impuesto. No calcular si no consta.",
+      "rules": [],
       "examples": ["9500", "7200"],
       "text_examples": []
     },
     "deduccion_donativos": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Deducción por donativos a entidades sin fines lucrativos establecidas en España (si aplica)",
       "required": false,
-      "rules": ["Normalmente 0", "Solo si el contribuyente realizó donativos a entidades españolas"],
+      "format": "importe_eur",
+      "description": "Deducción por donativos si procede.",
+      "rules": ["Normalmente 0"],
       "examples": ["0"],
       "text_examples": []
     },
     "cuota_resultante": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Cuota resultante tras aplicar deducciones (cuota_integra - deduccion_donativos)",
       "required": false,
-      "calculable": true,
-      "rules": ["Cuota resultante = cuota_integra - deduccion_donativos"],
-      "examples": ["9500", "7200"],
+      "format": "importe_eur",
+      "description": "Cuota resultante según Ley IRNR (cuota_integra - deduccion_donativos). No calcular si no consta.",
+      "rules": [],
+      "examples": ["9500"],
       "text_examples": []
     },
     "retencion_modelo_211": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Importe de la retención ya practicada e ingresada por el comprador mediante el Modelo 211 (3% del precio de venta)",
-      "rules": [
-        "Retención = valor_transmision × 0.03",
-        "Esta cantidad se deduce de la cuota resultante"
-      ],
+      "required": false,
+      "format": "importe_eur",
+      "description": "Retención soportada previamente en el modelo 211 (3% del precio de venta, ingresada por el comprador).",
+      "rules": ["Esta cantidad se descuenta de la cuota resultante"],
       "examples": ["4500", "6000"],
       "text_examples": []
     },
     "ingreso_anterior": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Importe ingresado en autoliquidaciones anteriores del mismo hecho imponible (solo para complementarias)",
       "required": false,
+      "format": "importe_eur",
+      "description": "Ingreso anterior si la declaración es complementaria.",
       "rules": ["0 o vacío para declaraciones ordinarias"],
-      "examples": ["0", "2000"],
+      "examples": ["0"],
       "text_examples": []
     },
     "cuota_diferencial": {
       "type": "number",
-      "format": "importe_euros",
-      "description": "Importe a ingresar o devolver (cuota_resultante - retencion_modelo_211 - ingreso_anterior)",
-      "rules": [
-        "Cuota diferencial = cuota_resultante - retencion_modelo_211",
-        "Si positivo: el no residente debe pagar la diferencia (A INGRESAR)",
-        "Si negativo: el no residente tiene derecho a devolución (A DEVOLVER)"
-      ],
+      "required": false,
+      "format": "importe_eur",
+      "description": "Resultado final de la autoliquidación (cuota_resultante - retencion_modelo_211). Positivo = a ingresar, negativo = a devolver.",
+      "rules": ["Solo si consta explícitamente. NO calcular."],
       "examples": ["5000", "-500", "0"],
       "text_examples": []
     },
     "es_complementaria": {
       "type": "boolean",
-      "format": "true/false",
-      "description": "Indica si esta declaración es complementaria de una anterior",
       "required": false,
-      "rules": ["true solo si se menciona explícitamente"],
+      "format": "true_false",
+      "description": "Marca si la autoliquidación es complementaria.",
+      "rules": [],
       "examples": ["false", "true"],
       "text_examples": []
     },
     "numero_justificante_anterior": {
       "type": "string",
-      "format": "numero",
-      "description": "Número de justificante de la autoliquidación anterior (para complementarias)",
       "required": false,
-      "rules": ["Solo para declaraciones complementarias"],
-      "examples": ["2024G210XXXXXXXXX"],
+      "description": "Número de justificante anterior si es complementaria.",
+      "rules": [],
+      "examples": [],
       "text_examples": []
     },
     "devolucion_iban": {
       "type": "string",
-      "format": "IBAN",
-      "description": "Número IBAN de la cuenta bancaria para devolución (si cuota_diferencial es negativa)",
       "required": false,
-      "rules": [
-        "Solo si hay derecho a devolución (cuota_diferencial < 0)",
-        "Formato IBAN: ES + 22 dígitos, o formato extranjero"
-      ],
+      "format": "IBAN",
+      "description": "IBAN para devolución si el resultado es a devolver (cuota_diferencial negativa).",
+      "rules": [],
       "examples": ["ES9121000418450200051332", "GB29NWBK60161331926819"],
       "text_examples": []
     },
     "devolucion_bic": {
       "type": "string",
-      "format": "BIC/SWIFT",
-      "description": "Código BIC/SWIFT del banco para devolución en cuenta extranjera",
       "required": false,
-      "rules": ["Solo para cuentas en bancos extranjeros (no SEPA)"],
-      "examples": ["NWBKGB2L", "BNPAFRPP"],
+      "format": "BIC_SWIFT",
+      "description": "Código BIC/SWIFT si procede (cuenta bancaria extranjera fuera de SEPA).",
+      "rules": [],
+      "examples": ["NWBKGB2L"],
       "text_examples": []
     }
   },
   "output_format": {
-    "type": "boe",
-    "target": "AEAT Modelo 210 - Incremento patrimonial",
-    "filename_pattern": "NIF_YYYY_periodo.210",
-    "note": "Fichero en formato de diseño de registro AEAT. El período es 1T/2T/3T/4T según la fecha de la transmisión. Tipo renta 28 para inmuebles. UE/EEE: 19%, no UE: 24% (GB = 24% post-Brexit)."
+    "type": "boe"
   }
 }
