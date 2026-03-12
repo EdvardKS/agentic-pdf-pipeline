@@ -5,7 +5,9 @@
       "WebFetch(domain:sede.agenciatributaria.gob.es)",
       "WebFetch(domain:sara-2-600.gva.es)",
       "Bash(find /c/Users/usuario/Documents/Proyectos/eiv -not -path */.* -not -path */__pycache__/* -not -path */outputs/* -not -path */batches/* -not -path */docs/* -not -path */tmp/* -type f)",
-      "Bash(find /c/Users/usuario/Documents/Proyectos/eiv -type f ! -path */.git/* ! -path */__pycache__/* ! -path *.pyc)"
+      "Bash(find /c/Users/usuario/Documents/Proyectos/eiv -type f ! -path */.git/* ! -path */__pycache__/* ! -path *.pyc)",
+      "Bash(python -c \"from pipeline.schema_loader import build_extraction_prompt, is_array_schema; print\\(''OK''\\)\")",
+      "Bash(python -c \"from pipeline.graph.graph import build_graph; print\\(''OK''\\)\")"
     ]
   }
 }

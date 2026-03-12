@@ -33,5 +33,13 @@
     "schema": "pipeline/schemas/aeat_210_incremento.schema.json",
     "exporter": "exporters.aeat_210_boe",
     "output_dir": "outputs/aeat_210"
+  },
+  "6": {
+    "name": "clientes",
+    "label": "Extracción de datos de clientes",
+    "schema": "pipeline/schemas/clientes.schema.json",
+    "exporter": "exporters.clientes_csv",
+    "output_dir": "outputs/clientes",
+    "output_format": "csv"
   }
 }

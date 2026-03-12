@@ -11,6 +11,7 @@ Responsabilidades:
 """
 
 import json
+from pipeline.schema_loader import is_array_schema
 from pipeline.utils.normalizers import (
     parse_number,
     normalize_nif,
@@ -28,6 +29,28 @@ CYAN = "\033[96m"
 RESET = "\033[0m"
 
 
+def _normalize_cliente(cliente: dict) -> dict:
+    """Normaliza los campos de un objeto cliente individual."""
+    out = {}
+    for k, v in cliente.items():
+        if k == "nif_nie_cif":
+            out[k] = normalize_nif(str(v) if v else "")
+        elif k == "fecha_nacimiento":
+            out[k] = normalize_date(str(v) if v else "")
+        elif k == "es_no_residente":
+            if isinstance(v, bool):
+                out[k] = v
+            else:
+                out[k] = str(v).lower() in ("true", "1", "yes", "si", "sí")
+        else:
+            out[k] = str(v) if v is not None else ""
+    # Inferir es_no_residente si no está explícito
+    if "es_no_residente" not in out:
+        pais = out.get("pais_domicilio", "").lower()
+        out["es_no_residente"] = bool(pais) and "españa" not in pais and "spain" not in pais
+    return out
+
+
 def validate_node(state: dict) -> dict:
     extraction_log = state.get("extraction_log", [])
     if not extraction_log:
@@ -37,8 +60,24 @@ def validate_node(state: dict) -> dict:
 
     raw = extraction_log[-1]
     schema = state.get("schema") or {}
-    fields_def = schema.get("fields", {})
     model_name = schema.get("document_type", "")
+
+    # -----------------------------------------------------------------------
+    # Rama para schemas de array (extraccion_clientes)
+    # -----------------------------------------------------------------------
+    if is_array_schema(schema):
+        output_key = schema["output_key"]
+        clientes_raw = raw.get(output_key, [])
+        print(f"\n{CYAN}[validate_node] Normalizando array '{output_key}': {len(clientes_raw)} items{RESET}")
+        clientes_validados = [_normalize_cliente(c) for c in clientes_raw]
+        print(f"  {GREEN}Clientes normalizados: {len(clientes_validados)}{RESET}")
+        state["validated_data"] = {output_key: clientes_validados}
+        return state
+
+    # -----------------------------------------------------------------------
+    # Rama para schemas planos (resto de modelos fiscales)
+    # -----------------------------------------------------------------------
+    fields_def = schema.get("fields", {})
 
     print(f"\n{CYAN}[validate_node] Normalizando {len(raw)} campos...{RESET}")
 
@@ -58,12 +97,12 @@ def validate_node(state: dict) -> dict:
             validated[field_name] = str(raw_value) if raw_value is not None else ""
 
     # -----------------------------------------------------------------------
-    # Cálculos derivados según tipo de modelo
+    # Calculos derivados segun tipo de modelo
     # -----------------------------------------------------------------------
     _compute_derived(validated, model_name)
 
     # -----------------------------------------------------------------------
-    # Warnings de campos críticos vacíos
+    # Warnings de campos criticos vacios
     # -----------------------------------------------------------------------
     warnings = check_warnings(validated, model_name)
     if warnings:

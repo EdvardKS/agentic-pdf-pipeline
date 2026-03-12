@@ -1,0 +1,340 @@
+{
+  "document_type": "extraccion_clientes",
+  "description": "Extrae los datos personales de TODAS las personas (compradores, vendedores, representantes, causantes, herederos) identificadas en una escritura notarial de compraventa, herencia o donación.",
+  "output_key": "clientes",
+
+  "extraction_instructions": [
+    "Identifica TODAS las personas físicas y jurídicas que aparecen en la escritura.",
+    "Incluye: compradores, vendedores, representantes con poder notarial, causantes (fallecidos), herederos.",
+    "Si una persona actúa 'en nombre y representación de' otra, incluye AMBAS: la representante Y la representada.",
+    "Para personas extranjeras: extrae siempre el número de pasaporte además del NIE si aparece.",
+    "El rol REPRESENTANTE es para quien firma la escritura con poderes. El rol del representado es COMPRADOR, VENDEDOR, HEREDERO o CAUSANTE según corresponda.",
+    "Devuelve EXCLUSIVAMENTE el JSON con la clave 'clientes' conteniendo un array. No escribas nada más.",
+    "Si un campo no aparece en el documento, devuelve cadena vacía \"\" para strings y false para booleans."
+  ],
+
+  "fields": {
+    "clientes": {
+      "type": "array",
+      "description": "Lista de todas las personas identificadas en el documento notarial.",
+      "item_fields": {
+
+        "nombre_completo": {
+          "type": "string",
+          "description": "Nombre completo de la persona, sin partículas honoríficas (sin DON, DOÑA, MR, MRS).",
+          "rules": [
+            "Elimina DON, DOÑA, MR, MRS, SIR al principio",
+            "Incluye todos los apellidos",
+            "Si es persona jurídica (empresa), incluir razón social completa"
+          ],
+          "examples": [
+            "Phillip Moon",
+            "Elaine Susan Liddle",
+            "Teresa Mary Ranson",
+            "Ronald Gerard Molle",
+            "Antonius Stephanus Huismans",
+            "Fuster Consulting S.L."
+          ]
+        },
+
+        "rol": {
+          "type": "string",
+          "description": "Rol de la persona en la escritura.",
+          "rules": [
+            "VENDEDOR: quien vende o transmite el bien. También para CAUSANTE (fallecido que transmite por herencia)",
+            "COMPRADOR: quien adquiere el bien, también HEREDERO o adjudicatario",
+            "REPRESENTANTE: quien actúa con poder notarial en nombre de otro. Puede ser representante del VENDEDOR o del COMPRADOR",
+            "CAUSANTE: persona fallecida cuya herencia se adjudica",
+            "HEREDERO: quien recibe la herencia"
+          ],
+          "allowed_values": ["VENDEDOR", "COMPRADOR", "REPRESENTANTE_VENDEDOR", "REPRESENTANTE_COMPRADOR", "CAUSANTE", "HEREDERO"],
+          "examples": ["VENDEDOR", "COMPRADOR", "REPRESENTANTE_VENDEDOR", "REPRESENTANTE_COMPRADOR", "CAUSANTE", "HEREDERO"],
+          "text_examples": [
+            {"text": "De una parte, en representación de la parte vendedora, DOÑA JUANA MARIA LUCAS MARTÍNEZ", "value": "REPRESENTANTE_VENDEDOR"},
+            {"text": "DON PHILLIP MOON... cuya representación ostenta la compareciente anteriormente relacionada", "value": "VENDEDOR"},
+            {"text": "DOÑA MARTA MARTINEZ-ABARCA GOMEZ... en representación de la parte compradora", "value": "REPRESENTANTE_COMPRADOR"},
+            {"text": "el causante DON MICHAEL GEORGE LIDDLE, de nacionalidad británica, fallecido", "value": "CAUSANTE"},
+            {"text": "DOÑA ELAINE SUSAN LIDDLE... como heredera y adjudicataria", "value": "HEREDERO"}
+          ]
+        },
+
+        "es_representante_de": {
+          "type": "string",
+          "description": "Si esta persona es REPRESENTANTE, indicar el NIF/NIE/pasaporte de la persona a quien representa. Vacío si no es representante.",
+          "rules": [
+            "Solo rellenar si rol = REPRESENTANTE_VENDEDOR o REPRESENTANTE_COMPRADOR",
+            "Usar el NIF/NIE del representado si se conoce",
+            "Si representa a varias personas, separar por coma"
+          ],
+          "examples": ["Y4351263E", "Y4351371S", "Y4351263E,Y4351371S", ""]
+        },
+
+        "tipo_doc_identidad": {
+          "type": "string",
+          "description": "Tipo del documento de identidad principal presentado.",
+          "allowed_values": ["DNI", "NIE", "PASAPORTE", "CIF", "OTRO"],
+          "rules": [
+            "DNI: ciudadanos españoles, 8 dígitos + letra",
+            "NIE: extranjeros residentes en España, empieza por X, Y o Z",
+            "PASAPORTE: extranjeros no residentes que presentan pasaporte",
+            "CIF: personas jurídicas (empresas)",
+            "Si tiene NIE, el tipo es NIE aunque también tenga pasaporte"
+          ],
+          "examples": ["DNI", "NIE", "PASAPORTE", "CIF"]
+        },
+
+        "nif_nie_cif": {
+          "type": "string",
+          "description": "Número del documento de identidad principal (DNI, NIE o CIF). Sin guiones, sin espacios, en mayúsculas.",
+          "rules": [
+            "Eliminar guiones: X5430031-F → X5430031F",
+            "Eliminar espacios",
+            "En mayúsculas",
+            "Si tiene NIE, usar el NIE. Si solo tiene DNI, usar el DNI",
+            "Si es empresa, usar el CIF"
+          ],
+          "examples": ["23017164Y", "Y4351263E", "Y8090354A", "X5430031F", "B73214108"],
+          "text_examples": [
+            {"text": "con DNI número 23017164Y", "value": "23017164Y"},
+            {"text": "con NIE Y4351263E", "value": "Y4351263E"},
+            {"text": "portador de NIE X5430031-F", "value": "X5430031F"}
+          ]
+        },
+
+        "numero_pasaporte": {
+          "type": "string",
+          "description": "Número de pasaporte. Rellenar especialmente para no residentes.",
+          "rules": [
+            "Extraer si aparece 'pasaporte nº', 'passport no.', 'passport number'",
+            "Mantener el formato original del pasaporte",
+            "Dejar vacío si no aparece"
+          ],
+          "examples": ["124187926", "555865959", "PL1680555", "NRJ3695K4", "NPRHDKPH7"],
+          "text_examples": [
+            {"text": "titular del pasaporte nº 124187926", "value": "124187926"},
+            {"text": "passport no. PL1680555", "value": "PL1680555"}
+          ]
+        },
+
+        "fecha_nacimiento": {
+          "type": "date",
+          "format": "YYYY-MM-DD",
+          "required": false,
+          "description": "Fecha de nacimiento si aparece explícitamente en el documento.",
+          "rules": [
+            "Solo rellenar si aparece explícitamente en el documento",
+            "Formato: YYYY-MM-DD",
+            "Dejar vacío si no se menciona"
+          ],
+          "examples": ["1958-07-27", "1960-07-02", "1959-02-13"],
+          "text_examples": [
+            {"text": "nacido el 27 de julio de 1958", "value": "1958-07-27"},
+            {"text": "born 13 de febrero de 1959", "value": "1959-02-13"}
+          ]
+        },
+
+        "nacionalidad": {
+          "type": "string",
+          "description": "Nacionalidad declarada en el documento, en español y en minúsculas.",
+          "rules": [
+            "Transcribir tal como aparece: española, británica, neerlandesa, irlandesa, alemana...",
+            "En minúsculas",
+            "Si no se menciona explícitamente, dejar vacío"
+          ],
+          "examples": ["española", "británica", "neerlandesa", "irlandesa", "alemana", "francesa"],
+          "text_examples": [
+            {"text": "de nacionalidad británica", "value": "británica"},
+            {"text": "de nacionalidad neerlandesa", "value": "neerlandesa"},
+            {"text": "de nationalité irlandaise", "value": "irlandesa"}
+          ]
+        },
+
+        "pais_residencia": {
+          "type": "string",
+          "description": "País donde reside habitualmente la persona.",
+          "rules": [
+            "Inferir del domicilio si no se menciona explícitamente",
+            "Si domicilio está en UK → Reino Unido",
+            "Si domicilio está en España → España",
+            "Si domicilio está en Países Bajos → Países Bajos",
+            "Nombre del país en español"
+          ],
+          "examples": ["España", "Reino Unido", "Países Bajos", "Irlanda", "Alemania", "Francia"],
+          "text_examples": [
+            {"text": "residente en Reino Unido", "value": "Reino Unido"},
+            {"text": "con domicilio en Dordrecht, Países Bajos", "value": "Países Bajos"}
+          ]
+        },
+
+        "estado_civil": {
+          "type": "string",
+          "description": "Estado civil declarado.",
+          "rules": [
+            "Valores posibles: casado/a, viudo/a, soltero/a, divorciado/a, separado/a",
+            "En minúsculas y con género correcto",
+            "Dejar vacío si no se menciona"
+          ],
+          "examples": ["casado", "casada", "viuda", "viudo", "soltero", "soltera"],
+          "text_examples": [
+            {"text": "casados en régimen legal de su nacionalidad", "value": "casado"},
+            {"text": "viuda", "value": "viuda"}
+          ]
+        },
+
+        "profesion": {
+          "type": "string",
+          "description": "Profesión u ocupación declarada.",
+          "rules": [
+            "Transcribir tal como aparece en el documento",
+            "En minúsculas",
+            "Dejar vacío si no se menciona"
+          ],
+          "examples": ["abogado", "abogada", "jubilado", "jubilada", "consultora", "administrativo", "administrativo/a"],
+          "text_examples": [
+            {"text": "mayor de edad, abogada, con domicilio", "value": "abogada"},
+            {"text": "de profesión jubilados", "value": "jubilado"}
+          ]
+        },
+
+        "domicilio_completo": {
+          "type": "string",
+          "description": "Dirección completa tal como aparece en el documento.",
+          "rules": [
+            "Copiar la dirección completa incluyendo calle, número, ciudad, código postal y país",
+            "No abreviar ni modificar",
+            "Si hay domicilio en el extranjero y también dirección de notificación en España, copiar el domicilio principal (el extranjero)"
+          ],
+          "examples": [
+            "21 Grange Park Close, Leeds LS25 7JD, Reino Unido",
+            "Partida los Calores 8, 03688 La Canalosa, Alicante, España",
+            "31 Carters Close, Sherington, Newport Pagnell, Buckinghamshire MK16 9NW, Reino Unido",
+            "Overkerk 69, Dordrecht, 3328LM, Países Bajos"
+          ]
+        },
+
+        "municipio_domicilio": {
+          "type": "string",
+          "description": "Municipio o ciudad del domicilio principal.",
+          "examples": ["Leeds", "La Canalosa", "Newport Pagnell", "Dordrecht", "Murcia", "Torrevieja"]
+        },
+
+        "provincia_domicilio": {
+          "type": "string",
+          "description": "Provincia o región del domicilio. Para extranjeros, indicar condado/región.",
+          "examples": ["Alicante", "Murcia", "West Yorkshire", "Buckinghamshire", "South Holland"]
+        },
+
+        "codigo_postal": {
+          "type": "string",
+          "description": "Código postal del domicilio si aparece.",
+          "rules": [
+            "Para España: 5 dígitos",
+            "Para UK: formato postal británico (LS25 7JD)",
+            "Para Países Bajos: 4 dígitos + 2 letras (3328LM)",
+            "Dejar vacío si no aparece"
+          ],
+          "examples": ["30730", "03181", "LS25 7JD", "MK16 9NW", "3328LM"]
+        },
+
+        "pais_domicilio": {
+          "type": "string",
+          "description": "País del domicilio principal.",
+          "examples": ["España", "Reino Unido", "Países Bajos", "Irlanda", "Alemania"]
+        },
+
+        "domicilio_notificacion_espana": {
+          "type": "string",
+          "description": "Dirección en España a efectos de notificaciones, si la persona no reside en España y ha indicado una dirección de notificación española.",
+          "rules": [
+            "Solo rellenar si la persona es no residente en España Y tiene dirección de notificación española",
+            "Buscar frases como 'a efectos de notificaciones', 'a efectos fiscales', 'para notificaciones en España'",
+            "Dejar vacío si no aplica"
+          ],
+          "examples": [
+            "Torrevieja 03181 (Alicante), calle Canónigo Torres, 9, 1º",
+            "San Javier 30730 (Murcia), calle Monasterio de Venta de Baños, 1"
+          ],
+          "text_examples": [
+            {"text": "a efectos de notificaciones: (03181) Torrevieja, Alicante, calle Canónigo Torres, 9, 1º", "value": "Torrevieja 03181 (Alicante), calle Canónigo Torres, 9, 1º"}
+          ]
+        },
+
+        "es_no_residente": {
+          "type": "boolean",
+          "description": "true si la persona NO reside habitualmente en España.",
+          "rules": [
+            "true: persona con domicilio en el extranjero, extranjera no residente",
+            "false: persona española o extranjera con domicilio habitual en España",
+            "Inferir del domicilio: si domicilio está fuera de España → true",
+            "Si el documento indica explícitamente 'no residente en España' → true"
+          ],
+          "examples": [true, false],
+          "text_examples": [
+            {"text": "con domicilio en Leeds, Reino Unido", "value": true},
+            {"text": "con domicilio en Torrevieja, Alicante", "value": false},
+            {"text": "no residente en España", "value": true}
+          ]
+        }
+
+      }
+    }
+  },
+
+  "output_format": {
+    "type": "json",
+    "structure": {
+      "clientes": [
+        {
+          "nombre_completo": "string",
+          "rol": "VENDEDOR|COMPRADOR|REPRESENTANTE_VENDEDOR|REPRESENTANTE_COMPRADOR|CAUSANTE|HEREDERO",
+          "es_representante_de": "string",
+          "tipo_doc_identidad": "DNI|NIE|PASAPORTE|CIF|OTRO",
+          "nif_nie_cif": "string",
+          "numero_pasaporte": "string",
+          "fecha_nacimiento": "YYYY-MM-DD",
+          "nacionalidad": "string",
+          "pais_residencia": "string",
+          "estado_civil": "string",
+          "profesion": "string",
+          "domicilio_completo": "string",
+          "municipio_domicilio": "string",
+          "provincia_domicilio": "string",
+          "codigo_postal": "string",
+          "pais_domicilio": "string",
+          "domicilio_notificacion_espana": "string",
+          "es_no_residente": false
+        }
+      ]
+    }
+  },
+
+  "reference_examples": {
+    "doc_17068_CS-CV": {
+      "expected_clients": [
+        {"nombre_completo": "Juana Maria Lucas Martínez", "rol": "REPRESENTANTE_VENDEDOR", "nif_nie_cif": "23017164Y", "tipo_doc_identidad": "DNI", "pais_domicilio": "España", "es_no_residente": false},
+        {"nombre_completo": "Phillip Moon", "rol": "VENDEDOR", "nif_nie_cif": "Y4351263E", "numero_pasaporte": "124187926", "tipo_doc_identidad": "NIE", "pais_domicilio": "Reino Unido", "es_no_residente": true},
+        {"nombre_completo": "Susan Ann Moon", "rol": "VENDEDOR", "nif_nie_cif": "Y4351371S", "numero_pasaporte": "121184645", "tipo_doc_identidad": "NIE", "pais_domicilio": "Reino Unido", "es_no_residente": true},
+        {"nombre_completo": "Marta Martinez-Abarca Gomez", "rol": "REPRESENTANTE_COMPRADOR", "nif_nie_cif": "27480762V", "tipo_doc_identidad": "DNI", "pais_domicilio": "España", "es_no_residente": false},
+        {"nombre_completo": "Ronald Gerard Molle", "rol": "COMPRADOR", "nif_nie_cif": "Z3829848P", "tipo_doc_identidad": "NIE", "pais_domicilio": "España", "es_no_residente": false},
+        {"nombre_completo": "Wilma Philippens", "rol": "COMPRADOR", "nif_nie_cif": "Z3829881H", "tipo_doc_identidad": "NIE", "pais_domicilio": "España", "es_no_residente": false}
+      ]
+    },
+    "doc_17155_CS_HER": {
+      "expected_clients": [
+        {"nombre_completo": "Jose Ignacio Sanchez Villa", "rol": "REPRESENTANTE_HEREDERO", "nif_nie_cif": "07964576K", "tipo_doc_identidad": "DNI", "pais_domicilio": "España", "es_no_residente": false},
+        {"nombre_completo": "Elaine Susan Liddle", "rol": "HEREDERO", "nif_nie_cif": "Y8090354A", "numero_pasaporte": "555865959", "tipo_doc_identidad": "NIE", "pais_domicilio": "Reino Unido", "es_no_residente": true},
+        {"nombre_completo": "Michael George Liddle", "rol": "CAUSANTE", "nif_nie_cif": "Y8090351T", "numero_pasaporte": "518968635", "tipo_doc_identidad": "NIE", "pais_domicilio": "Reino Unido", "es_no_residente": true}
+      ]
+    },
+    "doc_3836_CS_CV": {
+      "expected_clients": [
+        {"nombre_completo": "Luis Ruiz Fernández", "rol": "REPRESENTANTE_VENDEDOR", "nif_nie_cif": "27436036A", "tipo_doc_identidad": "DNI", "pais_domicilio": "España", "es_no_residente": false},
+        {"nombre_completo": "Teresa Mary Ranson", "rol": "VENDEDOR", "nif_nie_cif": "X5430031F", "numero_pasaporte": "PL1680555", "tipo_doc_identidad": "NIE", "pais_domicilio": "Irlanda", "es_no_residente": true},
+        {"nombre_completo": "Margaret Mary Hogan", "rol": "VENDEDOR", "tipo_doc_identidad": "PASAPORTE", "numero_pasaporte": "M750329", "pais_domicilio": "Irlanda", "es_no_residente": true},
+        {"nombre_completo": "Silvia Vicente-Ruiz Prados", "rol": "REPRESENTANTE_COMPRADOR", "nif_nie_cif": "23024895D", "tipo_doc_identidad": "DNI", "pais_domicilio": "España", "es_no_residente": false},
+        {"nombre_completo": "Antonius Stephanus Huismans", "rol": "COMPRADOR", "numero_pasaporte": "NX9P59CR9", "tipo_doc_identidad": "PASAPORTE", "pais_domicilio": "Países Bajos", "es_no_residente": true},
+        {"nombre_completo": "Natasja Johanna Sleiffer", "rol": "COMPRADOR", "numero_pasaporte": "NWP3B8L27", "tipo_doc_identidad": "PASAPORTE", "pais_domicilio": "Países Bajos", "es_no_residente": true}
+      ]
+    }
+  }
+}

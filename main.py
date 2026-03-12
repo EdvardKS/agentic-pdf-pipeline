@@ -85,6 +85,15 @@ def main():
     exporter = load_exporter(exporter_module)
     create_output_dir(output_dir)
 
+    # Para el modelo clientes (output_format=csv), crear el CSV una sola vez
+    # con timestamp fijo para que todos los documentos van al mismo fichero.
+    csv_session_path = None
+    if model_config.get("output_format") == "csv":
+        import importlib as _il
+        _csv_mod = _il.import_module(exporter_module)
+        csv_session_path = _csv_mod.init_csv(output_dir)
+        print(f"{GREEN}CSV de sesión creado:{RESET} {csv_session_path}\n")
+
     graph = build_graph()
 
     docs_procesados = 0
@@ -123,12 +132,18 @@ def main():
 
         if validated:
             try:
-                exporter(validated, output_dir, doc)
+                if csv_session_path:
+                    exporter(validated, output_dir, doc, csv_path=csv_session_path)
+                else:
+                    exporter(validated, output_dir, doc)
                 docs_exportados += 1
             except Exception as e:
                 print(f"  {RED}Error al exportar {doc['path']}: {e}{RESET}")
         else:
             print(f"  {RED}Sin datos extraídos para {doc['path']}{RESET}")
+
+    if csv_session_path:
+        print(f"\n{GREEN}CSV final:{RESET} {csv_session_path}")
 
     print(f"\n{GREEN}══════════════════════════════════════════{RESET}")
     print(f"{GREEN}Pipeline completado{RESET}")
